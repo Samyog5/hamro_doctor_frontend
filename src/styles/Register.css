@@ -1,0 +1,26 @@
+@import './Login.css';
+
+/* Register specific additions if any */
+.register-inside {
+  max-width: 420px; /* Slightly wider for register form */
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-color);
+}
+
+.step-dot.active {
+  background: var(--primary);
+  width: 20px;
+  border-radius: 4px;
+}
