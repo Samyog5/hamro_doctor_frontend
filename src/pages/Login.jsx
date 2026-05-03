@@ -19,7 +19,9 @@ function Login({ onLogin, onRegisterClick }) {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/v1/auth/login', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
+      const response = await fetch(`${apiUrl}/api/${apiVersion}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,6 +55,11 @@ function Login({ onLogin, onRegisterClick }) {
 
   return (
     <div className="login-page">
+      <div className="bg-decoration">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+      </div>
       <div className="login-card">
         {/* Left Section - Login Form */}
         <div className="login-form-area">
@@ -151,7 +158,7 @@ function Login({ onLogin, onRegisterClick }) {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
-              <span>Secure • Reliable • Trusted Healthcare</span>
+              <span>Secure | Reliable | Trusted Healthcare</span>
             </div>
           </div>
         </div>

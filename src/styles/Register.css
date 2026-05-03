@@ -1,8 +1,73 @@
 @import './Login.css';
 
 /* Register specific additions if any */
+/* Register specific additions */
 .register-inside {
-  max-width: 420px; /* Slightly wider for register form */
+  max-width: 500px;
+  /* Wider for multi-column layout */
+}
+
+.auth-form {
+  gap: 2px !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.form-row .input-field {
+  flex: 1;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+/* Role Select Specific Styles */
+.role-select {
+  flex: 1;
+  border: none;
+  background: none;
+  outline: none;
+  padding: 14px 0;
+  font-size: 15px;
+  color: var(--text-main);
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23757575' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 16px;
+  padding-left: 45px !important;
+}
+
+.input-field select {
+  width: 100%;
+  padding: 12px 15px 12px 45px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--text-main);
+  outline: none;
+  transition: all 0.2s ease;
+  background-color: transparent;
+}
+
+.input-field select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.1);
+}
+
+.role-select option {
+  background-color: white;
+  color: var(--text-main);
+  padding: 10px;
 }
 
 .step-indicator {
