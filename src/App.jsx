@@ -12,7 +12,6 @@ import Chat from './pages/Chat'
 import DoctorDashboard from './pages/DoctorDashboard'
 import DoctorOnboarding from './pages/DoctorOnboarding'
 import Layout from './components/Layout'
-import './App.css'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -45,7 +44,11 @@ function App() {
   }
 
   if (loading) {
-    return <div className="loading-spinner">Loading...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    )
   }
 
   return (

@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/Dashboard.css';
 import storyImage from '../assets/story_image.png';
-import logoImg from '../assets/logo.png';
-import doctorAvatar from '../assets/doctor_illustration.png';
 import exerciseImg from '../assets/exercise_illustration.png';
-
+import doctorAvatar from '../assets/doctor_illustration.png';
 const Dashboard = ({ onLogout }) => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
@@ -23,11 +20,8 @@ const Dashboard = ({ onLogout }) => {
     const fetchDoctors = async () => {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-        console.log('Fetching doctors from:', `${apiUrl}/api/v1/users/doctors`);
         const response = await fetch(`${apiUrl}/api/v1/users/doctors`);
-        console.log('Response status:', response.status);
         const data = await response.json();
-        console.log('Doctors data received:', data);
         setDebugData(data);
         if (data.success) {
           setDoctors(data.doctors || []);
@@ -77,336 +71,325 @@ const Dashboard = ({ onLogout }) => {
     ? doctors 
     : doctors.filter(d => d.doctorDetails?.speciality === selectedSpeciality);
 
-
-
   return (
-    <main className="dashboard-content">
-        <header className="main-header">
-          <div className="header-left">
-            <h1 className="greeting">
-              Good morning, {userData.name.split(' ')[0]}
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" style={{ marginLeft: '12px', verticalAlign: 'middle' }}>
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-              </svg>
-            </h1>
-            <p className="sub-headline">Here's your health summary for today</p>
-          </div>
-          <div className="header-right">
-            <button className="notification-btn">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-              <span className="notif-dot"></span>
-            </button>
-            <button className="book-button">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              Book Consultation
-            </button>
-          </div>
-        </header>
+    <main className="flex-1 ml-[280px] py-12 px-16 max-h-screen overflow-y-auto">
+      <header className="flex justify-between items-center mb-12">
+        <div className="header-left">
+          <h1 className="text-3xl font-bold tracking-tight mb-1 text-slate-900 flex items-center gap-3">
+            Good morning, {userData.name.split(' ')[0]}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" className="animate-spin-slow">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </h1>
+          <p className="text-slate-500 text-sm">Here's your health summary for today</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="relative w-11 h-11 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+          </button>
+          <button className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Book Consultation
+          </button>
+        </div>
+      </header>
 
-        <div className="layout-grid">
-          {/* Middle Column */}
-          <div className="col-middle">
-            {/* HERO Health Summary */}
-            <section className="hero-card">
-              <div className="hero-header">
-                <div className="trend-badge">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <path d="M12 19V5M5 12l7-7 7 7"/>
-                  </svg>
-                  <span>1.2 kg <small>vs last month</small></span>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
+        {/* Middle Column */}
+        <div className="flex flex-col gap-8">
+          {/* HERO Health Summary */}
+          <section className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm relative overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.05)_0%,transparent_70%)]">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-sm bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+                <span>1.2 kg <small className="font-normal opacity-70 ml-1">vs last month</small></span>
               </div>
+            </div>
 
-              <h2 className="health-title">Slightly above healthy range</h2>
-              <p className="health-subtitle">Don't worry, small changes can make a big difference.</p>
+            <h2 className="text-xl font-bold text-emerald-600 mb-1 leading-tight">Slightly above healthy range</h2>
+            <p className="text-slate-500 text-sm mb-8">Don't worry, small changes can make a big difference.</p>
 
-              <div className="bmi-visual">
-                <div className="bmi-labels">
-                  <span className="bmi-label-text">BMI (kg/m²)</span>
-                </div>
-                <div className="bmi-value-large">25.14</div>
-                
-                <div className="bmi-scale">
-                  <div className="scale-bar">
-                    <div className="scale-segment green"></div>
-                    <div className="scale-segment orange"></div>
-                    <div className="scale-segment red"></div>
-                    <div className="scale-pointer" style={{ left: '60%' }}></div>
-                  </div>
-                  <div className="scale-markers">
-                    <span>18.5</span>
-                    <span>24.9</span>
-                    <span>29.9</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="vitals-row">
-                <div className="vital-item">
-                  <div className="vital-icon-box">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
-                      <path d="M3 6h18"></path>
-                      <path d="M16 10a4 4 0 0 1-8 0"></path>
-                    </svg>
-                  </div>
-                  <div className="vital-data">
-                    <span className="v-label">WEIGHT</span>
-                    <div className="v-val-group">
-                      <span className="v-val">75 <small>kg</small></span>
-                      <span className="v-trend up">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <path d="M12 19V5M5 12l7-7 7 7"/>
-                        </svg>
-                        0.6 kg
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="vital-item">
-                  <div className="vital-icon-box">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                  </div>
-                  <div className="vital-data">
-                    <span className="v-label">HEIGHT</span>
-                    <div className="v-val-group">
-                      <span className="v-val">5'8"</span>
-                      <span className="v-trend neutral">No change</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="hero-tip">
-                <div className="tip-content">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="tip-icon">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                  </svg>
-                  <span><strong>Today's tip:</strong> A 20-minute walk can improve your mood and heart health.</span>
-                </div>
-                <button className="tip-link">
-                  View health plan 
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                </button>
-              </div>
-            </section>
-            {/* Doctors by Speciality */}
-            <section className="section">
-              <div className="section-header-row">
-                <h3 className="section-headline">Find a Specialist ({doctors.length} doctors found)</h3>
-                <button className="view-all-btn">View all</button>
-              </div>
+            <div className="mb-8">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">BMI (kg/m²)</div>
+              <div className="text-6xl font-bold text-slate-900 tracking-tighter my-4">25.14</div>
               
-              <div className="speciality-filter">
-                {specialities.map(spec => (
-                  <button 
-                    key={spec}
-                    className={`spec-tag ${selectedSpeciality === spec ? 'active' : ''}`}
-                    onClick={() => setSelectedSpeciality(spec)}
-                  >
-                    {spec}
-                  </button>
-                ))}
-              </div>
-
-              <div className="doctor-scroll-list">
-                {loadingDoctors ? (
-                  <div className="loading-shimmer">Loading doctors...</div>
-                ) : filteredDoctors.length > 0 ? (
-                  filteredDoctors.map(doctor => (
-                    <div key={doctor._id} className="doctor-card-small">
-                      <div className="doc-avatar-box">
-                        {doctor.profile?.avatar ? (
-                          <img src={doctor.profile.avatar} alt={doctor.name} />
-                        ) : (
-                          <div className="avatar-initial">{doctor.name.charAt(0)}</div>
-                        )}
-                        {doctor.doctorDetails?.isOnline && <span className="online-status-dot"></span>}
-                      </div>
-                      <div className="doc-info-box">
-                        <h4>{doctor.name}</h4>
-                        <span className="doc-spec-label">{doctor.doctorDetails?.speciality}</span>
-                        <div className="doc-meta-mini">
-                           <span>⭐ 4.8</span>
-                           <span>• {doctor.doctorDetails?.experience || 0} yrs exp</span>
-                        </div>
-                      </div>
-                      <button 
-                        className="book-mini-btn" 
-                        disabled={requestingId === doctor._id}
-                        onClick={() => handleConsultationRequest(doctor._id)}
-                      >
-                        {requestingId === doctor._id ? 'Sending...' : 'Consult'}
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ width: '100%' }}>
-                    <p className="no-doctors-msg">No doctors found for this speciality.</p>
-                    <pre style={{ fontSize: '10px', color: '#999', marginTop: '10px', background: '#f9f9f9', padding: '10px' }}>
-                      Debug: {JSON.stringify(debugData, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* Health Insights */}
-            <section className="section">
-              <div className="section-header-row">
-                <h3 className="section-headline">Health Insights</h3>
-                <button className="view-all-btn">View all</button>
-              </div>
-              <div className="insight-card">
-                <img src={storyImage} alt="Article" className="insight-img" />
-                <div className="insight-body">
-                  <div className="insight-meta">Dr. Amrit Raj Subedi | 5 min read</div>
-                  <h4 className="insight-title">Improving patient care through digital empathy</h4>
-                  <p className="insight-preview">How we balance innovation with the human touch essential for recovery...</p>
-                  <button className="read-more-btn">
-                    Read article 
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </button>
+              <div className="mt-4">
+                <div className="h-2.5 rounded-full flex gap-1 relative overflow-hidden bg-slate-100">
+                  <div className="flex-1 bg-emerald-500 rounded-sm"></div>
+                  <div className="flex-1 bg-amber-500 rounded-sm"></div>
+                  <div className="flex-1 bg-red-500 rounded-sm"></div>
+                  <div className="absolute top-0 w-4 h-full bg-white border-2 border-slate-900 rounded-full shadow-md z-10" style={{ left: '60%', transform: 'translateX(-50%)' }}></div>
+                </div>
+                <div className="flex justify-between mt-2 text-[10px] font-bold text-slate-400">
+                  <span>18.5</span>
+                  <span>24.9</span>
+                  <span>29.9</span>
                 </div>
               </div>
-            </section>
-          </div>
+            </div>
 
-          {/* Right Column */}
-          <div className="col-right">
-            <section className="side-card">
-              <h3 className="side-title">Today's Schedule</h3>
-              <div className="schedule-box">
-                <div className="calendar-illustration">
-                  {/* Simple SVG Calendar Illustration */}
-                  <svg width="80" height="80" viewBox="0 0 100 100">
-                    <rect x="10" y="20" width="80" height="70" rx="8" fill="#F3F4F6" stroke="#E5E7EB" strokeWidth="2"/>
-                    <rect x="10" y="20" width="80" height="20" rx="8" fill="#0052CC"/>
-                    <circle cx="80" cy="70" r="12" fill="#10B981"/>
-                    <path d="M74 70l4 4 8-8" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            <div className="flex gap-12 py-6 border-y border-slate-50 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                    <path d="M3 6h18"></path>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
                   </svg>
                 </div>
-                <h4>No appointments today</h4>
-                <p>You're all set for today! Check-ups and regular tracking help you stay healthy.</p>
-                <button className="schedule-btn">Book a check-up</button>
-                <button className="calendar-link">
-                  View calendar 
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                </button>
-              </div>
-            </section>
-
-            <section className="side-card">
-              <h3 className="side-title">Quick Actions</h3>
-              <div className="actions-list">
-                <button className="action-row">
-                  <div className="action-icon-bg green">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">WEIGHT</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-slate-900">75 <small className="text-sm font-medium opacity-50">kg</small></span>
+                    <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-600">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <path d="M12 19V5M5 12l7-7 7 7"/>
+                      </svg>
+                      0.6 kg
+                    </span>
                   </div>
-                  <span>Upload Medical Report</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
-                <button className="action-row">
-                  <div className="action-icon-bg purple">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                  </div>
-                  <span>Request Prescription</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
-                <button className="action-row">
-                  <div className="action-icon-bg blue">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  </div>
-                  <span>Ask a Health Question</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
-                <button className="action-row">
-                  <div className="action-icon-bg orange">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                  </div>
-                  <span>View Health Plan</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
-              </div>
-            </section>
-
-            <section className="side-card promo-card">
-              <div className="promo-header">
-                <h3>You're doing great!
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" style={{ marginLeft: '8px', verticalAlign: 'middle' }}>
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                </h3>
-              </div>
-              <p>Consistency is the key to a healthier you.</p>
-              
-              <div className="promo-progress-area">
-                <div className="progress-circle-box">
-                  <svg width="80" height="80" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="#F3F4F6" strokeWidth="8"/>
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="#10B981" strokeWidth="8" strokeDasharray="150 251" strokeLinecap="round"/>
-                    <text x="50" y="55" textAnchor="middle" fontSize="18" fontWeight="bold" fill="#111827">4/7</text>
-                  </svg>
-                  <span className="progress-label">Health goals completed</span>
                 </div>
-                <img src={exerciseImg} alt="Exercise" className="promo-img" />
               </div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">HEIGHT</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-slate-900">5'8"</span>
+                    <span className="text-[10px] font-bold text-slate-400">No change</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-              <button className="promo-link">
-                View all goals 
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="flex justify-between items-center bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/30">
+              <div className="flex items-center gap-3 text-sm text-emerald-800">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+                <span className="font-medium text-xs"><strong>Today's tip:</strong> A 20-minute walk can improve your mood and heart health.</span>
+              </div>
+              <button className="flex items-center gap-1 text-emerald-600 font-bold text-xs hover:underline">
+                View health plan 
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
               </button>
-            </section>
+            </div>
+          </section>
 
-            {/* Support Section */}
-            <section className="side-card help-section-main">
-              <div className="help-flex">
-                <div className="help-avatar-group">
-                  <img src={doctorAvatar} alt="Doctor" className="help-avatar-img" />
-                  <div className="online-indicator"></div>
+          {/* Doctors by Speciality */}
+          <section className="mb-8">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-slate-900">Find a Specialist <span className="text-slate-400 font-medium text-sm ml-2">({doctors.length} doctors found)</span></h3>
+              <button className="text-sm font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all">View all</button>
+            </div>
+            
+            <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+              {specialities.map(spec => (
+                <button 
+                  key={spec}
+                  className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${selectedSpeciality === spec ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-500 hover:text-blue-600'}`}
+                  onClick={() => setSelectedSpeciality(spec)}
+                >
+                  {spec}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+              {loadingDoctors ? (
+                <div className="w-full h-40 bg-slate-50 rounded-3xl animate-pulse flex items-center justify-center text-slate-400 font-medium">Loading specialists...</div>
+              ) : filteredDoctors.length > 0 ? (
+                filteredDoctors.map(doctor => (
+                  <div key={doctor._id} className="min-w-[200px] bg-white border border-slate-100 rounded-[24px] p-6 flex flex-col items-center text-center transition-all hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 group">
+                    <div className="relative w-16 h-16 mb-4">
+                      {doctor.profile?.avatar ? (
+                        <img src={doctor.profile.avatar} alt={doctor.name} className="w-full h-full rounded-2xl object-cover" />
+                      ) : (
+                        <div className="w-full h-full rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">{doctor.name.charAt(0)}</div>
+                      )}
+                      {doctor.doctorDetails?.isOnline && <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></span>}
+                    </div>
+                    <div className="mb-4">
+                      <h4 className="text-sm font-bold text-slate-900 mb-0.5 leading-tight">{doctor.name}</h4>
+                      <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">{doctor.doctorDetails?.speciality}</span>
+                      <div className="flex justify-center gap-2 text-[10px] font-bold text-slate-400 mt-2">
+                         <span className="text-amber-500">⭐ 4.8</span>
+                         <span>• {doctor.doctorDetails?.experience || 0} yrs exp</span>
+                      </div>
+                    </div>
+                    <button 
+                      className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all ${requestingId === doctor._id ? 'bg-slate-100 text-slate-400' : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white'}`}
+                      disabled={requestingId === doctor._id}
+                      onClick={() => handleConsultationRequest(doctor._id)}
+                    >
+                      {requestingId === doctor._id ? 'Sending...' : 'Consult Now'}
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="w-full p-12 bg-white rounded-3xl border border-dashed border-slate-200 text-center flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-2">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <p className="text-slate-500 font-bold">No doctors found for this speciality.</p>
+                  <p className="text-slate-400 text-xs">Try selecting a different category or view all.</p>
                 </div>
-                <div className="help-text-content">
-                  <h4>Need help?</h4>
-                  <p>Our care team is available to help you with anything.</p>
-                  <button className="help-action-btn">
-                    Contact Support
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </button>
-                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Health Insights */}
+          <section className="mb-8">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-slate-900">Health Insights</h3>
+              <button className="text-sm font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all">View all</button>
+            </div>
+            <div className="flex bg-white border border-slate-100 rounded-[24px] overflow-hidden shadow-sm group cursor-pointer hover:shadow-lg transition-all border-l-4 border-l-blue-600">
+              <img src={storyImage} alt="Article" className="w-60 h-auto object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="p-6 flex-1 flex flex-col justify-center">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Dr. Amrit Raj Subedi | 5 min read</div>
+                <h4 className="text-base font-bold text-slate-900 mb-2 leading-tight">Improving patient care through digital empathy</h4>
+                <p className="text-sm text-slate-500 mb-4 leading-relaxed">How we balance innovation with the human touch essential for recovery...</p>
+                <button className="flex items-center gap-1.5 text-blue-600 font-bold text-sm hover:translate-x-1 transition-all self-start">
+                  Read article 
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </button>
               </div>
-            </section>
-          </div>
+            </div>
+          </section>
         </div>
-      </main>
+
+        {/* Right Column */}
+        <div className="flex flex-col gap-6">
+          <section className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
+            <h3 className="text-base font-bold text-slate-900 mb-4">Today's Schedule</h3>
+            <div className="text-center py-4">
+              <div className="mb-6 flex justify-center">
+                <svg width="80" height="80" viewBox="0 0 100 100">
+                  <rect x="10" y="20" width="80" height="70" rx="8" fill="#F8FAFC" stroke="#E2E8F0" strokeWidth="2"/>
+                  <rect x="10" y="20" width="80" height="20" rx="8" fill="#3B82F6"/>
+                  <circle cx="80" cy="70" r="12" fill="#10B981"/>
+                  <path d="M74 70l4 4 8-8" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h4 className="font-bold text-slate-900 mb-1 leading-tight">No appointments today</h4>
+              <p className="text-sm text-slate-500 mb-6 leading-relaxed">You're all set! Check-ups help you stay ahead of health issues.</p>
+              <button className="w-full py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 transition-all hover:bg-blue-700 hover:-translate-y-0.5 mb-4">Book a check-up</button>
+              <button className="flex items-center justify-center gap-1.5 w-full text-slate-400 font-bold text-xs hover:text-slate-600 transition-colors uppercase tracking-widest">
+                View full calendar 
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+          </section>
+
+          <section className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
+            <h3 className="text-base font-bold text-slate-900 mb-4">Quick Actions</h3>
+            <div className="flex flex-col gap-2">
+              <button className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-transparent hover:border-slate-200 hover:bg-white transition-all group">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-100 text-emerald-600">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <span className="flex-1 text-left text-sm font-bold text-slate-700">Upload Report</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-300 group-hover:translate-x-1 transition-all"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+              <button className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-transparent hover:border-slate-200 hover:bg-white transition-all group">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-100 text-purple-600">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                </div>
+                <span className="flex-1 text-left text-sm font-bold text-slate-700">Request RX</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-300 group-hover:translate-x-1 transition-all"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+              <button className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-transparent hover:border-slate-200 hover:bg-white transition-all group">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-100 text-blue-600">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <span className="flex-1 text-left text-sm font-bold text-slate-700">Ask Question</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-300 group-hover:translate-x-1 transition-all"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+          </section>
+
+          <section className="bg-amber-50 border border-amber-100 rounded-[24px] p-6 shadow-sm">
+            <h3 className="text-base font-bold text-amber-900 flex items-center gap-2 mb-2">You're doing great!
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.5" className="animate-bounce">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            </h3>
+            <p className="text-xs text-amber-800/70 font-medium mb-6">Consistency is the key to a healthier you. Keep it up!</p>
+            
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col items-center gap-2">
+                <div className="relative w-20 h-20 flex items-center justify-center">
+                  <svg width="80" height="80" viewBox="0 0 100 100" className="-rotate-90">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#FEF3C7" strokeWidth="8"/>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#F59E0B" strokeWidth="8" strokeDasharray="150 251" strokeLinecap="round" className="animate-dash"/>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-lg font-bold text-amber-900">4/7</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-amber-800/60 uppercase tracking-widest text-center">Goals done</span>
+              </div>
+              <img src={exerciseImg} alt="Exercise" className="w-24 h-auto object-contain drop-shadow-md animate-float" />
+            </div>
+
+            <button className="flex items-center gap-1.5 text-amber-900 font-bold text-xs hover:gap-2 transition-all uppercase tracking-widest">
+              View all goals 
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </section>
+
+          {/* Support Section */}
+          <section className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-[24px] p-6 shadow-sm">
+            <div className="flex gap-4 items-start">
+              <div className="relative flex-shrink-0">
+                <img src={doctorAvatar} alt="Doctor" className="w-14 h-14 rounded-full border-4 border-white shadow-md" />
+                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <h4 className="text-sm font-bold text-blue-900 leading-tight">Need help?</h4>
+                <p className="text-[11px] text-blue-800/60 font-medium leading-relaxed mb-3">Our care team is available 24/7 for you.</p>
+                <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-[11px] font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all self-start">
+                  Contact Support
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
   );
 };
 

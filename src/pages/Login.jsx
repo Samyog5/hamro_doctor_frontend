@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/Login.css';
 import heroImg from '../assets/hero.webp';
 import logoImg from '../assets/logo.png';
 import stethImg from '../assets/steth.svg';
 
-function Login({ onLogin, onRegisterClick }) {
+function Login({ onLogin }) {
   const navigate = useNavigate();
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
@@ -54,47 +53,51 @@ function Login({ onLogin, onRegisterClick }) {
   };
 
   return (
-    <div className="login-page">
-      <div className="bg-decoration">
-        <div className="blob blob-1"></div>
-        <div className="blob blob-2"></div>
-        <div className="blob blob-3"></div>
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#1E88E5] to-[#0D47A1] flex items-center justify-center p-4 lg:p-0 font-['Poppins']">
+      {/* Background Decoration blobs */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-[500px] h-[500px] bg-white/10 rounded-full blur-[40px] -top-24 -left-24 animate-pulse"></div>
+        <div className="absolute w-[400px] h-[400px] bg-white/10 rounded-full blur-[40px] -bottom-12 -right-12 animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
-      <div className="login-card">
+
+      <div className="relative z-10 w-full max-w-[1100px] min-h-[85vh] bg-white/95 backdrop-blur-md rounded-[30px] shadow-2xl flex flex-col lg:flex-row overflow-hidden my-5">
         {/* Left Section - Login Form */}
-        <div className="login-form-area">
-          <div className="login-inside">
+        <div className="w-full lg:w-[55%] p-8 lg:p-14 flex flex-col justify-center bg-white">
+          <div className="w-full max-w-[380px] mx-auto">
             {/* Logo Section */}
-            <div className="auth-logo">
-              <div className="logo-icon-wrapper">
-                <img src={logoImg} alt="Hamro Doctor Logo" className="hd-logo-img" style={{ width: '180px', height: 'auto' }} />
+            <div className="flex justify-center lg:justify-start mb-6">
+              <div className="py-6 bg-white">
+                <img src={logoImg} alt="Hamro Doctor" className="w-[160px] h-auto object-contain" />
               </div>
             </div>
 
             {/* Login Header */}
-            <div className="auth-header">
-              <div className="header-title">
-                <img src={stethImg} alt="Stethoscope" className="action-icon" style={{ width: '28px', height: '28px', filter: 'invert(37%) sepia(93%) saturate(1471%) hue-rotate(188deg) brightness(95%) contrast(89%)' }} />
-                <h2 style={{ color: '#0D47A1' }}>Login</h2>
-              </div>
+            <div className="mb-10 flex items-center gap-4 animate-in slide-in-from-left duration-500">
+               <div className="w-12 h-12 bg-[#EEF5FF] rounded-2xl flex items-center justify-center shadow-sm border border-blue-100/50">
+                  <img src={stethImg} alt="Icon" className="w-7 h-7" style={{ filter: 'invert(37%) sepia(93%) saturate(1471%) hue-rotate(188deg) brightness(95%) contrast(89%)' }} />
+               </div>
+               <h2 className="text-4xl font-black text-[#0D47A1] tracking-tight">Login</h2>
             </div>
 
             {error && (
-              <div className="auth-error">
-                <span>{error}</span>
+              <div className="p-3.5 bg-red-50 border-l-4 border-red-500 text-red-600 rounded-lg text-xs font-bold mb-6 animate-shake">
+                {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="auth-form">
-              <div className="input-group">
-                <div className="input-field">
-                  <svg className="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#757575" strokeWidth="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
-                  </svg>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <div className="space-y-1.5">
+                <div className="relative flex items-center group">
+                  <div className="absolute left-4 z-10 pointer-events-none transition-colors">
+                    <svg className="text-blue-500 group-focus-within:text-blue-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
                   <input
                     type="text"
-                    placeholder="Email Address"
+                    placeholder="Email or Phone Number"
+                    className="w-full pl-12 pr-4 py-3.5 bg-white border-[1.5px] border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none transition-all text-sm text-slate-700 placeholder:text-slate-400 font-medium"
                     value={loginId}
                     onChange={(e) => setLoginId(e.target.value)}
                     required
@@ -103,15 +106,18 @@ function Login({ onLogin, onRegisterClick }) {
                 </div>
               </div>
 
-              <div className="input-group">
-                <div className="input-field">
-                  <svg className="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#757575" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
+              <div className="space-y-1.5">
+                <div className="relative flex items-center group">
+                  <div className="absolute left-4 z-10 pointer-events-none transition-colors">
+                    <svg className="text-blue-500 group-focus-within:text-blue-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </div>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Password"
+                    className="w-full pl-12 pr-12 py-3.5 bg-white border-[1.5px] border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none transition-all text-sm text-slate-700 placeholder:text-slate-400 font-medium"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -119,7 +125,7 @@ function Login({ onLogin, onRegisterClick }) {
                   />
                   <button
                     type="button"
-                    className="toggle-password"
+                    className="absolute right-4 text-slate-400 hover:text-blue-600 transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -137,36 +143,42 @@ function Login({ onLogin, onRegisterClick }) {
                 </div>
               </div>
 
-              <div className="auth-options">
-                <label className="remember-me">
-                  <input type="checkbox" />
+              <div className="flex justify-between items-center text-[13px] font-semibold mt-1">
+                <label className="flex items-center gap-2 text-slate-500 cursor-pointer hover:text-slate-700 transition-colors">
+                  <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
                   <span>Remember me</span>
                 </label>
-                <a href="#forgot" className="forgot-password">Forgot Password?</a>
+                <a href="#forgot" className="text-blue-600 hover:underline">Forgot Password?</a>
               </div>
 
-              <button type="submit" className="submit-auth-btn" disabled={loading}>
-                {loading ? 'Logging in...' : 'Login'}
+              <button 
+                type="submit" 
+                className="w-full py-3.5 bg-[#1E88E5] text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:bg-[#0D47A1] hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-70 disabled:cursor-not-allowed mt-2" 
+                disabled={loading}
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
+                ) : (
+                  'Login Now'
+                )}
               </button>
             </form>
 
-            <div className="auth-switch">
-              <p>Don't have an account? <button type="button" onClick={() => navigate('/register')}>Register</button></p>
+            <div className="text-center mt-8 text-sm text-slate-500 font-medium">
+              Don't have an account? <button type="button" onClick={() => navigate('/register')} className="text-[#1E88E5] font-bold hover:underline ml-1">Create account</button>
             </div>
 
-            <div className="auth-footer-note">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-              <span>Secure | Reliable | Trusted Healthcare</span>
-            </div>
+
           </div>
         </div>
 
         {/* Right Section - Hero Area */}
-        <div className="hero-visual-area">
-          <div className="hero-image-container">
-            <img src={heroImg} alt="Healthcare Professional" className="hero-img" />
+        <div className="hidden lg:flex lg:w-[45%] bg-[#E4F2FD] items-center justify-center p-12 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-100/20 to-transparent z-0"></div>
+          <div className="relative z-10 w-full flex flex-col items-center">
+            <div className="w-full max-w-[340px] animate-bounce-slow">
+              <img src={heroImg} alt="Hero" className="w-full h-auto" />
+            </div>
           </div>
         </div>
       </div>

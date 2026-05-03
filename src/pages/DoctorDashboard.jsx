@@ -121,106 +121,113 @@ function DoctorDashboard({ onLogout }) {
   }
 
   return (
-    <main className="dashboard-content">
-      <header className="main-header">
-        <div className="header-left">
-          <h1 className="greeting">
+    <main className="flex-1 ml-[280px] py-12 px-16 max-h-screen overflow-y-auto">
+      <header className="flex items-center justify-between mb-12">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
             Good morning, {userData?.doctorDetails?.salutation} {userData?.name?.split(' ')[0]}
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" style={{ marginLeft: '12px', verticalAlign: 'middle' }}>
-              <circle cx="12" cy="12" r="5"></circle>
-              <line x1="12" y1="1" x2="12" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="23"></line>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-              <line x1="1" y1="12" x2="3" y2="12"></line>
-              <line x1="21" y1="12" x2="23" y2="12"></line>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
+            <span className="text-2xl animate-bounce-slow">☀️</span>
           </h1>
-          <p className="sub-headline">Manage your patients and clinical activities</p>
+          <p className="text-slate-500 text-sm font-medium mt-1">Manage your patients and clinical activities</p>
         </div>
-        <div className="header-right">
-          <div className="status-toggle-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'white', padding: '8px 16px', borderRadius: '30px', border: '1px solid #E5E7EB' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: isOnline ? '#10B981' : '#6B7280' }}>{isOnline ? 'Online' : 'Offline'}</span>
-            <label className="toggle-switch">
-              <input type="checkbox" checked={isOnline} onChange={toggleStatus} />
-              <span className="slider"></span>
-            </label>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-2xl border border-slate-100 shadow-sm">
+            <span className={`text-xs font-bold uppercase tracking-wider ${isOnline ? 'text-emerald-500' : 'text-slate-400'}`}>
+              {isOnline ? 'Available' : 'Unavailable'}
+            </span>
+            <button 
+              onClick={toggleStatus}
+              className={`w-12 h-6 rounded-full relative transition-all duration-300 ${isOnline ? 'bg-emerald-500' : 'bg-slate-200'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 ${isOnline ? 'left-7' : 'left-1'}`}></div>
+            </button>
           </div>
-          <button className="notification-btn">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <button className="relative p-3 bg-white text-slate-400 hover:text-blue-600 rounded-2xl border border-slate-100 shadow-sm transition-all hover:scale-105">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
-            {pendingRequests.length > 0 && <span className="notif-dot"></span>}
+            {pendingRequests.length > 0 && (
+              <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
+            )}
           </button>
         </div>
       </header>
 
-      <div className="layout-grid">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-10">
         {/* Middle Column */}
-        <div className="col-middle">
+        <div className="space-y-10">
           {/* Stats Hero Card */}
-          <section className="hero-card doctor-hero">
-            <div className="hero-header">
-              <div className="trend-badge">
+          <section className="bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 p-10 rounded-[48px] shadow-2xl shadow-blue-100 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-1000 group-hover:scale-150"></div>
+            
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white text-xs font-bold mb-8">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                   <path d="M12 19V5M5 12l7-7 7 7"/>
                 </svg>
-                <span>Rs. {stats.netEarnings} <small>total earnings</small></span>
+                <span>Rs. {stats.netEarnings} <small className="opacity-70 ml-1">NET REVENUE</small></span>
+              </div>
+
+              <h2 className="text-4xl font-black text-white mb-3 tracking-tight">Practice Performance</h2>
+              <p className="text-blue-100 font-medium mb-10 max-w-md">You've reached {stats.noOfConsultations} consultations this month. Great progress!</p>
+
+              <div className="grid grid-cols-3 gap-8 bg-black/10 backdrop-blur-sm p-8 rounded-[32px] border border-white/10">
+                  <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Sessions</span>
+                      <div className="text-3xl font-black text-white">{stats.noOfConsultations}</div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Growth</span>
+                      <div className="text-3xl font-black text-white">{stats.recommendations}</div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Articles</span>
+                      <div className="text-3xl font-black text-white">{stats.articlesPublished}</div>
+                  </div>
               </div>
             </div>
 
-            <h2 className="health-title" style={{ color: '#0052CC' }}>Practice Overview</h2>
-            <p className="health-subtitle">You've reached {stats.noOfConsultations} consultations this month. Keep it up!</p>
-
-            <div className="doctor-stats-main-row">
-                <div className="doc-main-stat">
-                    <span className="stat-label-mini">CONSULTATIONS</span>
-                    <div className="stat-value-big">{stats.noOfConsultations}</div>
-                </div>
-                <div className="doc-main-stat">
-                    <span className="stat-label-mini">RECOMMENDATIONS</span>
-                    <div className="stat-value-big">{stats.recommendations}</div>
-                </div>
-                <div className="doc-main-stat">
-                    <span className="stat-label-mini">ARTICLES</span>
-                    <div className="stat-value-big">{stats.articlesPublished}</div>
-                </div>
-            </div>
-
-            <div className="hero-tip" style={{ backgroundColor: '#EEF2FF' }}>
-              <div className="tip-content">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" className="tip-icon">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
-                </svg>
-                <span style={{ color: '#1E1B4B' }}><strong>Pro Tip:</strong> Answering unanswered questions in the forum can increase your profile visibility.</span>
-              </div>
+            <div className="mt-8 flex items-center gap-3 bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10">
+              <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center text-slate-900 text-lg">💡</div>
+              <span className="text-white text-xs font-medium"><strong>Strategy:</strong> Publish more health tips to increase your consultation requests.</span>
             </div>
           </section>
 
           {/* New Requests Section */}
           {pendingRequests.length > 0 && (
-            <section className="section">
-              <div className="section-header-row">
-                <h3 className="section-headline" style={{ color: '#F59E0B' }}>New Consultation Requests</h3>
+            <section>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  Incoming Requests
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded-lg text-[10px] font-black uppercase">{pendingRequests.length} New</span>
+                </h3>
               </div>
-              <div className="doctor-consult-list">
+              <div className="space-y-4">
                 {pendingRequests.map(req => (
-                  <div key={req._id} className="doc-consult-card request-card" style={{ borderLeft: '4px solid #F59E0B' }}>
-                    <div className="patient-brief">
-                      <div className="patient-avatar" style={{ backgroundColor: '#FEF3C7', color: '#D97706' }}>
+                  <div key={req._id} className="bg-white border-2 border-slate-50 rounded-[32px] p-6 flex items-center justify-between hover:shadow-xl hover:shadow-slate-200/50 transition-all group animate-in slide-in-from-left duration-500">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
                         {req.patient?.name?.charAt(0) || 'P'}
                       </div>
-                      <div className="patient-details">
-                        <h4>{req.patient?.name}</h4>
-                        <p>Requested at {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-base">{req.patient?.name}</h4>
+                        <p className="text-xs text-slate-400 font-medium">Requested {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
-                    <div className="request-actions" style={{ display: 'flex', gap: '10px' }}>
-                      <button className="action-btn-outline accept-btn" style={{ borderColor: '#10B981', color: '#10B981' }} onClick={() => handleRespond(req._id, 'active')}>Accept</button>
-                      <button className="action-btn-outline reject-btn" style={{ borderColor: '#EF4444', color: '#EF4444' }} onClick={() => handleRespond(req._id, 'cancelled')}>Reject</button>
+                    <div className="flex gap-3">
+                      <button 
+                        className="px-6 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-600 hover:-translate-y-0.5 transition-all" 
+                        onClick={() => handleRespond(req._id, 'active')}
+                      >
+                        Accept
+                      </button>
+                      <button 
+                        className="px-6 py-2.5 bg-slate-50 text-slate-400 rounded-xl text-xs font-bold hover:bg-red-50 hover:text-red-500 transition-all" 
+                        onClick={() => handleRespond(req._id, 'cancelled')}
+                      >
+                        Reject
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -229,106 +236,100 @@ function DoctorDashboard({ onLogout }) {
           )}
 
           {/* Active Consultations */}
-          <section className="section">
-            <div className="section-header-row">
-              <h3 className="section-headline">Active Consultations</h3>
-              <button className="view-all-btn">View all</button>
+          <section>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-slate-900">Ongoing Sessions</h3>
+              <button className="text-blue-600 text-xs font-bold hover:underline">View All Activities</button>
             </div>
-            <div className="doctor-consult-list">
+            <div className="space-y-4">
                 {activeConsultations.length > 0 ? activeConsultations.map(consult => (
-                  <div key={consult._id} className="doc-consult-card">
-                    <div className="patient-brief">
-                      <div className="patient-avatar">{consult.patient?.name?.charAt(0) || 'P'}</div>
-                      <div className="patient-details">
-                        <h4>{consult.patient?.name}</h4>
-                        <p>{consult.status === 'active' ? 'Ongoing Consultation' : 'Waiting'}</p>
+                  <div key={consult._id} className="bg-white border border-slate-100 rounded-[32px] p-6 flex items-center justify-between hover:shadow-xl hover:shadow-slate-200/50 transition-all group">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-bold text-xl uppercase">
+                        {consult.patient?.name?.charAt(0) || 'P'}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-base">{consult.patient?.name}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                          <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider">Live Session</p>
+                        </div>
                       </div>
                     </div>
-                    <button className="action-btn-outline">Join Chat</button>
+                    <button className="px-8 py-3 bg-blue-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 hover:-translate-y-0.5 transition-all" onClick={() => navigate(`/chat/${consult._id}`)}>Resume Session</button>
                   </div>
                 )) : (
-                  <p style={{ textAlign: 'center', padding: '20px', color: '#64748B', fontSize: '14px' }}>No active consultations at the moment.</p>
-                )}
-            </div>
-          </section>
-
-          {/* Health Community Stories */}
-          <section className="section">
-            <div className="section-header-row">
-              <h3 className="section-headline">Health Community Stories</h3>
-            </div>
-            <div className="stories-reel">
-                {[1, 2, 3, 4, 5].map(i => (
-                    <div key={i} className="story-item-wrapper">
-                        <div className="story-circle-doc"></div>
-                        <span>Doctor {i}</span>
+                  <div className="flex flex-col items-center justify-center py-16 bg-slate-50/50 rounded-[40px] border border-dashed border-slate-200 text-center">
+                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center mb-4 text-slate-300 shadow-sm">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     </div>
-                ))}
+                    <p className="text-slate-400 font-bold text-sm">No active sessions right now.</p>
+                  </div>
+                )}
             </div>
           </section>
         </div>
 
         {/* Right Column */}
-        <div className="col-right">
+        <div className="space-y-10">
           {/* Monthly Activities */}
-          <section className="side-card">
-            <h3 className="side-title">Activities this month</h3>
-            <div className="doc-activity-list">
-                <div className="activity-row">
-                    <div className="activity-icon-bg" style={{ backgroundColor: '#F0FDF4' }}>👁️</div>
-                    <div className="activity-info">
-                        <span className="activity-name">Article Views</span>
-                        <span className="activity-val">{stats.articleViews}</span>
+          <section className="bg-white border border-slate-100 rounded-[40px] p-8 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest mb-8 text-center">Analytics</h3>
+            <div className="space-y-6">
+                <div className="flex items-center gap-4 group">
+                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl transition-transform group-hover:scale-110">👁️</div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Article Views</span>
+                        <span className="text-xl font-black text-slate-900">{stats.articleViews}</span>
                     </div>
                 </div>
-                <div className="activity-row">
-                    <div className="activity-icon-bg" style={{ backgroundColor: '#EFF6FF' }}>📊</div>
-                    <div className="activity-info">
-                        <span className="activity-name">Profile Views</span>
-                        <span className="activity-val">{stats.totalPageViews}</span>
+                <div className="flex items-center gap-4 group">
+                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl transition-transform group-hover:scale-110">📈</div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Profile Rank</span>
+                        <span className="text-xl font-black text-slate-900">{stats.totalPageViews}</span>
                     </div>
                 </div>
             </div>
           </section>
 
           {/* Quick Actions */}
-          <section className="side-card">
-            <h3 className="side-title">Quick Tools</h3>
-            <div className="actions-list">
-              <button className="action-row">
-                <div className="action-icon-bg green">🏥</div>
-                <span>Hospitals & OPD</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+          <section className="bg-white border border-slate-100 rounded-[40px] p-8 shadow-sm overflow-hidden">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest mb-8 text-center">Tools</h3>
+            <div className="space-y-2">
+              <button className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-all group">
+                <div className="flex items-center gap-4">
+                  <span className="text-xl grayscale group-hover:grayscale-0 transition-all">🏥</span>
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-blue-700">Hospitals & OPD</span>
+                </div>
+                <svg className="text-slate-300 group-hover:translate-x-1 transition-all" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M9 18l6-6-6-6"/></svg>
               </button>
-              <button className="action-row">
-                <div className="action-icon-bg purple">📝</div>
-                <span>Write Article</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+              <button className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl transition-all group">
+                <div className="flex items-center gap-4">
+                  <span className="text-xl grayscale group-hover:grayscale-0 transition-all">✍️</span>
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-emerald-700">Publish Article</span>
+                </div>
+                <svg className="text-slate-300 group-hover:translate-x-1 transition-all" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M9 18l6-6-6-6"/></svg>
               </button>
-              <button className="action-row">
-                <div className="action-icon-bg blue">💊</div>
-                <span>Prescription Templates</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+              <button className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition-all group">
+                <div className="flex items-center gap-4">
+                  <span className="text-xl grayscale group-hover:grayscale-0 transition-all">📂</span>
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-amber-700">RX Templates</span>
+                </div>
+                <svg className="text-slate-300 group-hover:translate-x-1 transition-all" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M9 18l6-6-6-6"/></svg>
               </button>
             </div>
           </section>
 
           {/* Boost Profile */}
-          <section className="side-card promo-card" style={{ backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }}>
-            <div className="promo-header">
-              <h3 style={{ color: '#3730A3' }}>Boost Your Profile
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" style={{ marginLeft: '8px', verticalAlign: 'middle' }}>
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
-              </h3>
-            </div>
-            <p style={{ color: '#4338CA' }}>Complete your clinical background to get more recommendations.</p>
-            <button className="promo-link" style={{ color: '#4F46E5' }}>
-              Edit Profile 
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </button>
+          <section className="bg-indigo-900 p-8 rounded-[40px] shadow-xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
+            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2 relative z-10">
+              Boost Rank
+              <span className="text-yellow-400">✨</span>
+            </h3>
+            <p className="text-indigo-200 text-xs font-medium mb-8 leading-relaxed relative z-10">Complete your medical background to appear higher in patient searches.</p>
+            <button className="w-full py-4 bg-white text-indigo-900 rounded-2xl font-bold text-xs shadow-lg hover:-translate-y-0.5 transition-all relative z-10">Update Profile</button>
           </section>
         </div>
       </div>

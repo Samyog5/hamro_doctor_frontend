@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import logoImg from '../assets/logo.png';
 
 const Sidebar = ({ userData, onLogout }) => {
@@ -163,52 +163,51 @@ const Sidebar = ({ userData, onLogout }) => {
   ];
 
   return (
-    <aside className="sidebar-nav">
-      <div className="sidebar-top">
-        <div className="nav-brand-area" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
-          <img src={logoImg} alt="Hamro Doctor" className="brand-logo" />
+    <aside className="w-[280px] bg-white border-r border-slate-100 flex flex-col justify-between fixed h-screen pb-8 z-30">
+      <div className="flex flex-col overflow-y-auto">
+        <div className="p-8 pb-4 cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <img src={logoImg} alt="Hamro Doctor" className="h-8 w-auto" />
         </div>
 
-        <nav className="nav-items">
-          {menuItems.map((item) => (
-            <button 
-              key={item.id} 
-              onClick={() => {
-                if (!item.path.startsWith('#')) {
-                  navigate(item.path);
-                }
-              }} 
-              className={`nav-link ${location.pathname === item.path ? 'is-active' : ''}`}
-              style={{ width: '100%', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer' }}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-text">{item.label}</span>
-            </button>
-          ))}
+        <nav className="px-4 flex flex-col gap-1 mt-4">
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <button 
+                key={item.id} 
+                onClick={() => !item.path.startsWith('#') && navigate(item.path)} 
+                className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-medium transition-all group ${isActive ? 'bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
+              >
+                <span className={`transition-opacity ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>{item.icon}</span>
+                <span className={isActive ? 'font-bold' : ''}>{item.label}</span>
+              </button>
+            );
+          })}
         </nav>
       </div>
 
-      <div className="sidebar-bottom">
-        <div className="nav-user">
-          <div className="user-brief">
-            <div className="avatar-placeholder">{userData.avatar}</div>
-            <div className="user-details">
-              <div className="u-name">{userData.name}</div>
-              <div className="u-id">{userData.id}</div>
+      <div className="px-4 flex flex-col gap-4">
+        <div className="pt-6 border-t border-slate-100">
+          <div className="flex items-center gap-3 mb-6 px-2">
+            <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-lg shadow-blue-200">
+              {userData.avatar}
+            </div>
+            <div className="flex flex-col">
+              <div className="text-sm font-bold text-slate-900 leading-tight">{userData.name}</div>
+              <div className="text-[11px] text-slate-400 font-medium tracking-wide">{userData.id}</div>
             </div>
           </div>
-          <button className="nav-link logout-trigger" onClick={onLogout}>
-            <span className="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <button className="flex items-center gap-4 px-4 py-3 w-full rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all group" onClick={onLogout}>
+            <span className="opacity-70 group-hover:opacity-100 transition-opacity">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                 <polyline points="16 17 21 12 16 7"></polyline>
                 <line x1="21" y1="12" x2="9" y2="12"></line>
               </svg>
             </span>
-            <span className="nav-text" style={{ color: '#DC2626' }}>Logout</span>
+            Logout
           </button>
         </div>
-
       </div>
     </aside>
   );
