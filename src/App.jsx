@@ -8,6 +8,7 @@ import Calls from './pages/Calls'
 import Prescriptions from './pages/Prescriptions'
 import Appointments from './pages/Appointments'
 import Questions from './pages/Questions'
+import Chat from './pages/Chat'
 import DoctorDashboard from './pages/DoctorDashboard'
 import DoctorOnboarding from './pages/DoctorOnboarding'
 import Layout from './components/Layout'
@@ -65,6 +66,7 @@ function App() {
           <Route path="/prescriptions" element={<Prescriptions />} />
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/questions" element={<Questions />} />
+          <Route path="/chat/:id" element={<Chat />} />
           <Route path="/doctor-dashboard" element={<DoctorDashboard onLogout={handleLogout} />} />
         </Route>
 

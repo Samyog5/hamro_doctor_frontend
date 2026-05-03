@@ -51,6 +51,7 @@
   font-size: var(--fs-md);
   font-weight: var(--fw-semi);
   margin-bottom: 2px;
+  text-transform: capitalize;
 }
 
 .doctor-info p {

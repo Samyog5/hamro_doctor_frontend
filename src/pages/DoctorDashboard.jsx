@@ -13,6 +13,8 @@ function DoctorDashboard({ onLogout }) {
     articleViews: 0,
     totalPageViews: 0
   });
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [activeConsultations, setActiveConsultations] = useState([]);
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,39 +22,49 @@ function DoctorDashboard({ onLogout }) {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
   const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user'));
-        
-        if (!token || !user) {
-          navigate('/login');
-          return;
-        }
-
-        setUserData(user);
-        setIsOnline(user.doctorDetails?.isOnline || false);
-
-        // Fetch stats
-        const response = await fetch(`${apiUrl}/api/${apiVersion}/doctor/dashboard`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        const data = await response.json();
-        if (data.success) {
-          setStats(data.stats);
-        }
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError('Failed to load dashboard data');
-      } finally {
-        setLoading(false);
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      
+      if (!token || !user) {
+        navigate('/login');
+        return;
       }
-    };
 
+      setUserData(user);
+      setIsOnline(user.doctorDetails?.isOnline || false);
+
+      // Fetch stats
+      const statsRes = await fetch(`${apiUrl}/api/${apiVersion}/doctor/dashboard`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const statsData = await statsRes.json();
+      if (statsData.success) setStats(statsData.stats);
+
+      // Fetch pending requests
+      const pendingRes = await fetch(`${apiUrl}/api/${apiVersion}/consultations?status=pending`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const pendingData = await pendingRes.json();
+      if (pendingData.success) setPendingRequests(pendingData.consultations);
+
+      // Fetch active consultations
+      const activeRes = await fetch(`${apiUrl}/api/${apiVersion}/consultations?status=active`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const activeData = await activeRes.json();
+      if (activeData.success) setActiveConsultations(activeData.consultations);
+
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDashboardData();
   }, [navigate]);
 
@@ -73,13 +85,34 @@ function DoctorDashboard({ onLogout }) {
       const data = await response.json();
       if (data.success) {
         setIsOnline(newStatus);
-        // Update user in localStorage
         const user = JSON.parse(localStorage.getItem('user'));
         user.doctorDetails.isOnline = newStatus;
         localStorage.setItem('user', JSON.stringify(user));
       }
     } catch (err) {
       console.error('Error updating status:', err);
+    }
+  };
+
+  const handleRespond = async (id, status) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/${apiVersion}/consultations/${id}/respond`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert(`Consultation ${status === 'active' ? 'accepted' : 'rejected'}`);
+        fetchDashboardData(); // Refresh data
+      }
+    } catch (err) {
+      console.error('Error responding to consultation:', err);
     }
   };
 
@@ -120,7 +153,7 @@ function DoctorDashboard({ onLogout }) {
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
-            <span className="notif-dot"></span>
+            {pendingRequests.length > 0 && <span className="notif-dot"></span>}
           </button>
         </div>
       </header>
@@ -167,6 +200,34 @@ function DoctorDashboard({ onLogout }) {
             </div>
           </section>
 
+          {/* New Requests Section */}
+          {pendingRequests.length > 0 && (
+            <section className="section">
+              <div className="section-header-row">
+                <h3 className="section-headline" style={{ color: '#F59E0B' }}>New Consultation Requests</h3>
+              </div>
+              <div className="doctor-consult-list">
+                {pendingRequests.map(req => (
+                  <div key={req._id} className="doc-consult-card request-card" style={{ borderLeft: '4px solid #F59E0B' }}>
+                    <div className="patient-brief">
+                      <div className="patient-avatar" style={{ backgroundColor: '#FEF3C7', color: '#D97706' }}>
+                        {req.patient?.name?.charAt(0) || 'P'}
+                      </div>
+                      <div className="patient-details">
+                        <h4>{req.patient?.name}</h4>
+                        <p>Requested at {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    </div>
+                    <div className="request-actions" style={{ display: 'flex', gap: '10px' }}>
+                      <button className="action-btn-outline accept-btn" style={{ borderColor: '#10B981', color: '#10B981' }} onClick={() => handleRespond(req._id, 'active')}>Accept</button>
+                      <button className="action-btn-outline reject-btn" style={{ borderColor: '#EF4444', color: '#EF4444' }} onClick={() => handleRespond(req._id, 'cancelled')}>Reject</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Active Consultations */}
           <section className="section">
             <div className="section-header-row">
@@ -174,30 +235,24 @@ function DoctorDashboard({ onLogout }) {
               <button className="view-all-btn">View all</button>
             </div>
             <div className="doctor-consult-list">
-                <div className="doc-consult-card">
+                {activeConsultations.length > 0 ? activeConsultations.map(consult => (
+                  <div key={consult._id} className="doc-consult-card">
                     <div className="patient-brief">
-                        <div className="patient-avatar">SM</div>
-                        <div className="patient-details">
-                            <h4>Samyok Majhi</h4>
-                            <p>Fever and Headache • 2:30 PM</p>
-                        </div>
+                      <div className="patient-avatar">{consult.patient?.name?.charAt(0) || 'P'}</div>
+                      <div className="patient-details">
+                        <h4>{consult.patient?.name}</h4>
+                        <p>{consult.status === 'active' ? 'Ongoing Consultation' : 'Waiting'}</p>
+                      </div>
                     </div>
-                    <button className="action-btn-outline">Join Call</button>
-                </div>
-                <div className="doc-consult-card">
-                    <div className="patient-brief">
-                        <div className="patient-avatar">AB</div>
-                        <div className="patient-details">
-                            <h4>Ashok Basnet</h4>
-                            <p>Follow-up • 4:00 PM</p>
-                        </div>
-                    </div>
-                    <button className="action-btn-outline">View Records</button>
-                </div>
+                    <button className="action-btn-outline">Join Chat</button>
+                  </div>
+                )) : (
+                  <p style={{ textAlign: 'center', padding: '20px', color: '#64748B', fontSize: '14px' }}>No active consultations at the moment.</p>
+                )}
             </div>
           </section>
 
-          {/* Latest from Health Community */}
+          {/* Health Community Stories */}
           <section className="section">
             <div className="section-header-row">
               <h3 className="section-headline">Health Community Stories</h3>

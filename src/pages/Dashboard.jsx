@@ -13,6 +13,69 @@ const Dashboard = ({ onLogout }) => {
     id: 'HD-10125',
     avatar: 'AB'
   });
+  const [doctors, setDoctors] = useState([]);
+  const [selectedSpeciality, setSelectedSpeciality] = useState('All');
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [requestingId, setRequestingId] = useState(null);
+  const [debugData, setDebugData] = useState(null);
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        console.log('Fetching doctors from:', `${apiUrl}/api/v1/users/doctors`);
+        const response = await fetch(`${apiUrl}/api/v1/users/doctors`);
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Doctors data received:', data);
+        setDebugData(data);
+        if (data.success) {
+          setDoctors(data.doctors || []);
+        }
+      } catch (err) {
+        console.error('Error fetching doctors:', err);
+        setDebugData({ error: err.message });
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+
+    fetchDoctors();
+  }, []);
+
+  const handleConsultationRequest = async (doctorId) => {
+    setRequestingId(doctorId);
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      
+      const response = await fetch(`${apiUrl}/api/v1/consultations/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ doctorId })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('Consultation request sent successfully! Please wait for the doctor to accept.');
+      } else {
+        alert(data.message || 'Failed to send request');
+      }
+    } catch (err) {
+      console.error('Error requesting consultation:', err);
+      alert('An error occurred while sending the request');
+    } finally {
+      setRequestingId(null);
+    }
+  };
+
+  const specialities = ['All', ...new Set(doctors.map(d => d.doctorDetails?.speciality).filter(Boolean))];
+  const filteredDoctors = selectedSpeciality === 'All' 
+    ? doctors 
+    : doctors.filter(d => d.doctorDetails?.speciality === selectedSpeciality);
 
 
 
@@ -148,8 +211,66 @@ const Dashboard = ({ onLogout }) => {
                 </button>
               </div>
             </section>
+            {/* Doctors by Speciality */}
+            <section className="section">
+              <div className="section-header-row">
+                <h3 className="section-headline">Find a Specialist ({doctors.length} doctors found)</h3>
+                <button className="view-all-btn">View all</button>
+              </div>
+              
+              <div className="speciality-filter">
+                {specialities.map(spec => (
+                  <button 
+                    key={spec}
+                    className={`spec-tag ${selectedSpeciality === spec ? 'active' : ''}`}
+                    onClick={() => setSelectedSpeciality(spec)}
+                  >
+                    {spec}
+                  </button>
+                ))}
+              </div>
 
-
+              <div className="doctor-scroll-list">
+                {loadingDoctors ? (
+                  <div className="loading-shimmer">Loading doctors...</div>
+                ) : filteredDoctors.length > 0 ? (
+                  filteredDoctors.map(doctor => (
+                    <div key={doctor._id} className="doctor-card-small">
+                      <div className="doc-avatar-box">
+                        {doctor.profile?.avatar ? (
+                          <img src={doctor.profile.avatar} alt={doctor.name} />
+                        ) : (
+                          <div className="avatar-initial">{doctor.name.charAt(0)}</div>
+                        )}
+                        {doctor.doctorDetails?.isOnline && <span className="online-status-dot"></span>}
+                      </div>
+                      <div className="doc-info-box">
+                        <h4>{doctor.name}</h4>
+                        <span className="doc-spec-label">{doctor.doctorDetails?.speciality}</span>
+                        <div className="doc-meta-mini">
+                           <span>⭐ 4.8</span>
+                           <span>• {doctor.doctorDetails?.experience || 0} yrs exp</span>
+                        </div>
+                      </div>
+                      <button 
+                        className="book-mini-btn" 
+                        disabled={requestingId === doctor._id}
+                        onClick={() => handleConsultationRequest(doctor._id)}
+                      >
+                        {requestingId === doctor._id ? 'Sending...' : 'Consult'}
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ width: '100%' }}>
+                    <p className="no-doctors-msg">No doctors found for this speciality.</p>
+                    <pre style={{ fontSize: '10px', color: '#999', marginTop: '10px', background: '#f9f9f9', padding: '10px' }}>
+                      Debug: {JSON.stringify(debugData, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </section>
 
             {/* Health Insights */}
             <section className="section">
