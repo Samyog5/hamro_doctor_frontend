@@ -5,11 +5,18 @@ import exerciseImg from '../assets/exercise_illustration.png';
 import doctorAvatar from '../assets/doctor_illustration.png';
 const Dashboard = ({ onLogout }) => {
   const navigate = useNavigate();
-  const [userData, setUserData] = useState({
-    name: 'Ashok Basnet',
-    id: 'HD-10125',
-    avatar: 'AB'
+  const [userData, setUserData] = useState(() => {
+    const savedUser = JSON.parse(localStorage.getItem('user'));
+    return savedUser || { name: 'User', id: '', avatar: 'U' };
   });
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   const [doctors, setDoctors] = useState([]);
   const [selectedSpeciality, setSelectedSpeciality] = useState('All');
   const [loadingDoctors, setLoadingDoctors] = useState(true);
@@ -72,11 +79,11 @@ const Dashboard = ({ onLogout }) => {
     : doctors.filter(d => d.doctorDetails?.speciality === selectedSpeciality);
 
   return (
-    <main className="flex-1 ml-[280px] py-12 px-16 max-h-screen overflow-y-auto">
-      <header className="flex justify-between items-center mb-12">
+    <main className="flex-1 lg:ml-[280px] py-12 px-4 lg:px-16 max-h-screen overflow-y-auto">
+      <header className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-12">
         <div className="header-left">
-          <h1 className="text-3xl font-bold tracking-tight mb-1 text-slate-900 flex items-center gap-3">
-            Good morning, {userData.name.split(' ')[0]}
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mb-1 text-slate-900 flex items-center gap-3">
+            {getGreeting()}, {userData.name.split(' ')[0]}
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" className="animate-spin-slow">
               <circle cx="12" cy="12" r="5"></circle>
               <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -92,21 +99,24 @@ const Dashboard = ({ onLogout }) => {
           <p className="text-slate-500 text-sm">Here's your health summary for today</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="relative w-11 h-11 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
+          <button className="hidden lg:flex relative w-11 h-11 rounded-full bg-white border border-slate-100 items-center justify-center text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
             <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
           </button>
-          <button className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all">
+          <button 
+            onClick={() => document.getElementById('specialists-section').scrollIntoView({ behavior: 'smooth' })}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all"
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
               <line x1="16" y1="2" x2="16" y2="6"></line>
               <line x1="8" y1="2" x2="8" y2="6"></line>
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
-            Book Consultation
+            <span className="whitespace-nowrap">Book Consultation</span>
           </button>
         </div>
       </header>
@@ -147,7 +157,7 @@ const Dashboard = ({ onLogout }) => {
               </div>
             </div>
 
-            <div className="flex gap-12 py-6 border-y border-slate-50 mb-6">
+            <div className="flex flex-col sm:flex-row gap-6 sm:gap-12 py-6 border-y border-slate-50 mb-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -186,14 +196,14 @@ const Dashboard = ({ onLogout }) => {
               </div>
             </div>
 
-            <div className="flex justify-between items-center bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/30">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/30">
               <div className="flex items-center gap-3 text-sm text-emerald-800">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 text-emerald-500">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
                 </svg>
                 <span className="font-medium text-xs"><strong>Today's tip:</strong> A 20-minute walk can improve your mood and heart health.</span>
               </div>
-              <button className="flex items-center gap-1 text-emerald-600 font-bold text-xs hover:underline">
+              <button className="flex items-center gap-1 text-emerald-600 font-bold text-xs hover:underline whitespace-nowrap">
                 View health plan 
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -203,7 +213,7 @@ const Dashboard = ({ onLogout }) => {
           </section>
 
           {/* Doctors by Speciality */}
-          <section className="mb-8">
+          <section id="specialists-section" className="mb-8 scroll-mt-24">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-slate-900">Find a Specialist <span className="text-slate-400 font-medium text-sm ml-2">({doctors.length} doctors found)</span></h3>
               <button className="text-sm font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all">View all</button>
@@ -270,8 +280,8 @@ const Dashboard = ({ onLogout }) => {
               <h3 className="text-lg font-bold text-slate-900">Health Insights</h3>
               <button className="text-sm font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all">View all</button>
             </div>
-            <div className="flex bg-white border border-slate-100 rounded-[24px] overflow-hidden shadow-sm group cursor-pointer hover:shadow-lg transition-all border-l-4 border-l-blue-600">
-              <img src={storyImage} alt="Article" className="w-60 h-auto object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div className="flex flex-col sm:flex-row bg-white border border-slate-100 rounded-[24px] overflow-hidden shadow-sm group cursor-pointer hover:shadow-lg transition-all border-l-4 border-l-blue-600">
+              <img src={storyImage} alt="Article" className="w-full sm:w-60 h-48 sm:h-auto object-cover group-hover:scale-105 transition-transform duration-500" />
               <div className="p-6 flex-1 flex flex-col justify-center">
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Dr. Amrit Raj Subedi | 5 min read</div>
                 <h4 className="text-base font-bold text-slate-900 mb-2 leading-tight">Improving patient care through digital empathy</h4>
@@ -312,32 +322,7 @@ const Dashboard = ({ onLogout }) => {
             </div>
           </section>
 
-          <section className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900 mb-4">Quick Actions</h3>
-            <div className="flex flex-col gap-2">
-              <button className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-transparent hover:border-slate-200 hover:bg-white transition-all group">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-100 text-emerald-600">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                </div>
-                <span className="flex-1 text-left text-sm font-bold text-slate-700">Upload Report</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-300 group-hover:translate-x-1 transition-all"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-              <button className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-transparent hover:border-slate-200 hover:bg-white transition-all group">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-100 text-purple-600">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                </div>
-                <span className="flex-1 text-left text-sm font-bold text-slate-700">Request RX</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-300 group-hover:translate-x-1 transition-all"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-              <button className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-transparent hover:border-slate-200 hover:bg-white transition-all group">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-100 text-blue-600">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                </div>
-                <span className="flex-1 text-left text-sm font-bold text-slate-700">Ask Question</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-300 group-hover:translate-x-1 transition-all"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-            </div>
-          </section>
+
 
           <section className="bg-amber-50 border border-amber-100 rounded-[24px] p-6 shadow-sm">
             <h3 className="text-base font-bold text-amber-900 flex items-center gap-2 mb-2">You're doing great!

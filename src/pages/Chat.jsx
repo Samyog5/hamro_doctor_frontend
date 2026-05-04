@@ -24,6 +24,7 @@ const Chat = () => {
   const [callStatus, setCallStatus] = useState('');
   const [callType, setCallType] = useState('audio');
   const [callTimer, setCallTimer] = useState(0);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
 
   // Prescription states
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -166,6 +167,9 @@ const Chat = () => {
       });
 
       connectionRef.current = peer;
+      
+      // Record session in backend
+      recordCallSession(type);
     } catch (err) {
       console.error('Error accessing devices:', err);
       alert('Could not access microphone/camera.');
@@ -208,8 +212,65 @@ const Chat = () => {
 
       peer.signal(callerSignal);
       connectionRef.current = peer;
+      
+      // Record session in backend
+      recordCallSession(callType);
     } catch (err) {
       console.error('Error answering call:', err);
+    }
+  };
+
+  const recordCallSession = async (type) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/api/${apiVersion}/consultations/${id}/session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ type })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCurrentSessionId(data.session._id);
+      }
+    } catch (error) {
+      console.error('Error recording session:', error);
+    }
+  };
+
+  const finalizeCallSession = async () => {
+    if (!currentSessionId) return;
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${apiUrl}/api/${apiVersion}/consultations/${id}/session/${currentSessionId}/finish`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setCurrentSessionId(null);
+    } catch (error) {
+      console.error('Error finalizing session:', error);
+    }
+  };
+
+  const handleCompleteConsultation = async () => {
+    if (!window.confirm('Are you sure you want to finish this consultation? This will close the session.')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/api/${apiVersion}/consultations/${id}/complete`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        setConsultation(prev => ({ ...prev, status: 'completed' }));
+        alert('Consultation marked as completed.');
+        navigate('/calls');
+      }
+    } catch (error) {
+      console.error('Error completing consultation:', error);
     }
   };
 
@@ -225,6 +286,12 @@ const Chat = () => {
     setCallStatus('');
     setCallTimer(0);
     clearInterval(timerRef.current);
+    
+    // Finalize session in backend if this was an active call
+    if (currentSessionId) {
+      finalizeCallSession();
+    }
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -349,7 +416,7 @@ const Chat = () => {
   const otherParty = isDoctor ? consultation.patient : consultation.doctor;
 
   return (
-    <main className="flex-1 ml-[280px] h-screen bg-slate-50 font-['Poppins'] flex flex-col items-center py-6 px-4">
+    <main className="flex-1 lg:ml-[280px] h-screen bg-slate-50 font-['Poppins'] flex flex-col items-center py-4 lg:py-6 px-2 lg:px-4">
       <div className="w-full max-w-[900px] flex-1 bg-white flex flex-col rounded-2xl shadow-xl border border-slate-100 overflow-hidden relative">
         {/* Header */}
         <header className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white z-20">
@@ -379,8 +446,13 @@ const Chat = () => {
                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                 </button>
                 {isDoctor && (
-                  <button className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all border border-emerald-100" onClick={() => setShowPrescriptionModal(true)}>
+                  <button className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all border border-emerald-100" onClick={() => setShowPrescriptionModal(true)} title="Issue Prescription">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                  </button>
+                )}
+                {isDoctor && consultation.status === 'active' && (
+                  <button className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all border border-red-100" onClick={handleCompleteConsultation} title="Finish Consultation">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
                   </button>
                 )}
               </div>

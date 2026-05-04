@@ -121,7 +121,7 @@ function DoctorDashboard({ onLogout }) {
   }
 
   return (
-    <main className="flex-1 ml-[280px] py-12 px-16 max-h-screen overflow-y-auto">
+    <main className="flex-1 lg:ml-[280px] py-12 px-4 lg:px-16 max-h-screen overflow-y-auto">
       <header className="flex items-center justify-between mb-12">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">

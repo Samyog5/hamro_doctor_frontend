@@ -7,9 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      // To add only specific polyfills, add them here
       include: ['buffer', 'events', 'process', 'util'],
-      // Whether to polyfill `node:` protocol imports.
       globals: {
         Buffer: true,
         global: true,
@@ -17,4 +15,8 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    host: true,
+    port: 5173,
+  }
 })

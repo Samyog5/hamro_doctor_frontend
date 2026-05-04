@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import logoImg from '../assets/logo.png';
 
-const Sidebar = ({ userData, onLogout }) => {
+const Sidebar = ({ userData, onLogout, isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -35,10 +35,20 @@ const Sidebar = ({ userData, onLogout }) => {
     { 
       id: 'messages', 
       label: 'My Messages', 
-      path: '/consultations', // Usually messages are linked to consultations list or a separate messages list
+      path: '/messages',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+        </svg>
+      ) 
+    },
+    { 
+      id: 'calls', 
+      label: 'My Calls', 
+      path: '/calls',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
         </svg>
       ) 
     },
@@ -82,7 +92,7 @@ const Sidebar = ({ userData, onLogout }) => {
   ] : [
     { 
       id: 'dashboard', 
-      label: 'My Profile', 
+      label: 'Dashboard', 
       path: '/dashboard',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -107,7 +117,7 @@ const Sidebar = ({ userData, onLogout }) => {
     { 
       id: 'messages', 
       label: 'My Messages', 
-      path: '/consultations',
+      path: '/messages',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
@@ -149,24 +159,47 @@ const Sidebar = ({ userData, onLogout }) => {
       ) 
     },
     { 
-      id: 'questions', 
-      label: 'My Questions', 
-      path: '/questions',
+      id: 'articles', 
+      label: 'Health Articles', 
+      path: '/articles',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          <line x1="12" y1="11" x2="12" y2="11.01"></line>
-          <path d="M12 7a2 2 0 0 1 0 4"></path>
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      ) 
+    },
+    { 
+      id: 'forum', 
+      label: 'Discussion Forum', 
+      path: '/forum',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
         </svg>
       ) 
     }
   ];
 
   return (
-    <aside className="w-[280px] bg-white border-r border-slate-100 flex flex-col justify-between fixed h-screen pb-8 z-30">
+    <aside className={`w-[280px] bg-white border-r border-slate-100 flex flex-col justify-between fixed top-0 left-0 h-full z-50 transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="flex flex-col overflow-y-auto">
-        <div className="p-8 pb-4 cursor-pointer" onClick={() => navigate('/dashboard')}>
-          <img src={logoImg} alt="Hamro Doctor" className="h-8 w-auto" />
+        <div className="p-8 pb-4 flex items-center justify-between">
+          <div className="cursor-pointer" onClick={() => { navigate('/dashboard'); onClose(); }}>
+            <img src={logoImg} alt="Hamro Doctor" className="h-8 w-auto" />
+          </div>
+          <button 
+            onClick={onClose}
+            className="lg:hidden p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-all"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
 
         <nav className="px-4 flex flex-col gap-1 mt-4">
@@ -175,7 +208,12 @@ const Sidebar = ({ userData, onLogout }) => {
             return (
               <button 
                 key={item.id} 
-                onClick={() => !item.path.startsWith('#') && navigate(item.path)} 
+                onClick={() => { 
+                  if (!item.path.startsWith('#')) {
+                    navigate(item.path);
+                    onClose(); 
+                  }
+                }} 
                 className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-medium transition-all group ${isActive ? 'bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
               >
                 <span className={`transition-opacity ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>{item.icon}</span>

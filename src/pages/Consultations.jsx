@@ -69,7 +69,7 @@ const Consultations = ({ onLogout }) => {
   };
 
   return (
-    <main className="flex-1 ml-[280px] py-12 px-16 max-h-screen overflow-y-auto">
+    <main className="flex-1 lg:ml-[280px] py-12 px-4 lg:px-16 max-h-screen overflow-y-auto">
       <header className="mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">My Consultations</h1>
         <p className="text-slate-500 text-sm font-medium">
