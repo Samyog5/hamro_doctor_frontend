@@ -1,9 +1,16 @@
-/* Obsolete dashboard styles removed */
-
-@media (max-width: 1024px) {
-  border-right: none;
-  border-bottom: 1px solid var(--border);
+:root {
+  --border: #E5E7EB;
+  --text-h: #0F172A;
+  --social-bg: #F9FAFB;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  #spacer {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
 }
 
 #next-steps ul {
@@ -59,8 +66,10 @@
 #spacer {
   height: 88px;
   border-top: 1px solid var(--border);
+}
 
-  @media (max-width: 1024px) {
+@media (max-width: 1024px) {
+  #spacer {
     height: 48px;
   }
 }
@@ -86,4 +95,34 @@
     right: 0;
     border-right-color: var(--border);
   }
+}
+
+/* Modern Floating Bubble Animations */
+@keyframes float-bubble-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(2% , -4%) scale(1.05); }
+  66% { transform: translate(-1%, 2%) scale(0.95); }
+}
+
+@keyframes float-bubble-2 {
+  0%, 100% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(-3%, 4%) scale(1); }
+}
+
+@keyframes float-bubble-3 {
+  0%, 100% { transform: translate(0, 0) scale(0.9); }
+  40% { transform: translate(4%, 3%) scale(1.1); }
+  80% { transform: translate(-2%, -3%) scale(1); }
+}
+
+.animate-float-bubble-1 {
+  animation: float-bubble-1 25s infinite ease-in-out;
+}
+
+.animate-float-bubble-2 {
+  animation: float-bubble-2 35s infinite ease-in-out;
+}
+
+.animate-float-bubble-3 {
+  animation: float-bubble-3 28s infinite ease-in-out;
 }

@@ -253,10 +253,17 @@ function Register({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#1E88E5] to-[#0D47A1] flex items-center justify-center p-4 lg:p-0 font-['Poppins']">
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[500px] h-[500px] bg-white/10 rounded-full blur-[40px] -top-24 -left-24 animate-pulse"></div>
-        <div className="absolute w-[400px] h-[400px] bg-white/10 rounded-full blur-[40px] -bottom-12 -right-12 animate-pulse" style={{ animationDelay: '2s' }}></div>
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#0D47A1] to-[#1976D2] flex items-center justify-center p-4 lg:p-0 font-['Poppins'] relative overflow-hidden">
+      {/* Defined Floating Bubbles - Less Blur, More Shape */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-white/10 rounded-full blur-[20px] border border-white/20 animate-float-bubble-1"></div>
+        <div className="absolute bottom-[5%] right-[5%] w-96 h-96 bg-blue-400/20 rounded-full blur-[30px] border border-white/10 animate-float-bubble-2"></div>
+        <div className="absolute top-[45%] right-[15%] w-48 h-48 bg-white/10 rounded-full blur-[15px] border border-white/20 animate-float-bubble-3"></div>
+        <div className="absolute bottom-[25%] left-[15%] w-40 h-40 bg-sky-300/20 rounded-full blur-[10px] border border-white/10 animate-float-bubble-1" style={{ animationDelay: '-12s' }}></div>
+        
+        {/* Extra small distinct bubbles for 'WOW' effect */}
+        <div className="absolute top-[20%] right-[30%] w-12 h-12 bg-white/30 rounded-full blur-[2px] border border-white/40 animate-float-bubble-2"></div>
+        <div className="absolute bottom-[40%] left-[5%] w-20 h-20 bg-white/20 rounded-full blur-[4px] border border-white/30 animate-float-bubble-3"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-[1100px] min-h-[85vh] bg-white/95 backdrop-blur-md rounded-[30px] shadow-2xl flex flex-col lg:flex-row overflow-hidden my-5">
