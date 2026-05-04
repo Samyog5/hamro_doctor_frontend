@@ -88,6 +88,17 @@ const Sidebar = ({ userData, onLogout, isOpen, onClose }) => {
           <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
         </svg>
       ) 
+    },
+    { 
+      id: 'profile', 
+      label: 'My Profile', 
+      path: '/profile',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      ) 
     }
   ] : [
     { 
@@ -181,6 +192,17 @@ const Sidebar = ({ userData, onLogout, isOpen, onClose }) => {
           <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
         </svg>
       ) 
+    },
+    { 
+      id: 'profile', 
+      label: 'My Profile', 
+      path: '/profile',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      ) 
     }
   ];
 
@@ -226,13 +248,23 @@ const Sidebar = ({ userData, onLogout, isOpen, onClose }) => {
 
       <div className="px-4 flex flex-col gap-4">
         <div className="pt-6 border-t border-slate-100">
-          <div className="flex items-center gap-3 mb-6 px-2">
-            <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-lg shadow-blue-200">
-              {userData.avatar}
+          <div 
+            className="flex items-center gap-3 mb-6 px-2 cursor-pointer group/profile hover:bg-slate-50 p-2 rounded-2xl transition-all"
+            onClick={() => { navigate('/profile'); onClose(); }}
+          >
+            <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-lg shadow-blue-200 transition-transform group-hover/profile:scale-110 overflow-hidden">
+              {userData.profile?.avatar ? (
+                <img src={userData.profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                userData.avatar || userData.name?.charAt(0)
+              )}
             </div>
             <div className="flex flex-col">
-              <div className="text-sm font-bold text-slate-900 leading-tight">{userData.name}</div>
-              <div className="text-[11px] text-slate-400 font-medium tracking-wide">{userData.id}</div>
+              <div className="text-sm font-bold text-slate-900 leading-tight group-hover/profile:text-blue-600 transition-colors">{userData.name}</div>
+              <div className="text-[11px] text-slate-400 font-medium tracking-wide flex items-center gap-1">
+                View Profile
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </div>
             </div>
           </div>
           <button className="flex items-center gap-4 px-4 py-3 w-full rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all group" onClick={onLogout}>

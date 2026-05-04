@@ -9,6 +9,7 @@ const Dashboard = ({ onLogout }) => {
     const savedUser = JSON.parse(localStorage.getItem('user'));
     return savedUser || { name: 'User', id: '', avatar: 'U' };
   });
+  const [profile, setProfile] = useState(null);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -18,6 +19,7 @@ const Dashboard = ({ onLogout }) => {
   };
 
   const [doctors, setDoctors] = useState([]);
+  const [articles, setArticles] = useState([]);
   const [selectedSpeciality, setSelectedSpeciality] = useState('All');
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [requestingId, setRequestingId] = useState(null);
@@ -29,19 +31,49 @@ const Dashboard = ({ onLogout }) => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
         const response = await fetch(`${apiUrl}/api/v1/users/doctors`);
         const data = await response.json();
-        setDebugData(data);
         if (data.success) {
           setDoctors(data.doctors || []);
         }
       } catch (err) {
         console.error('Error fetching doctors:', err);
-        setDebugData({ error: err.message });
       } finally {
         setLoadingDoctors(false);
       }
     };
 
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        const response = await fetch(`${apiUrl}/api/v1/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.success) {
+          setProfile(data.user.profile);
+          setUserData(data.user);
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      }
+    };
+
+    const fetchArticles = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        const response = await fetch(`${apiUrl}/api/v1/articles?limit=3`);
+        const data = await response.json();
+        if (data.success) {
+          setArticles(data.articles || []);
+        }
+      } catch (err) {
+        console.error('Error fetching articles:', err);
+      }
+    };
+
     fetchDoctors();
+    fetchProfile();
+    fetchArticles();
   }, []);
 
   const handleConsultationRequest = async (doctorId) => {
@@ -126,75 +158,100 @@ const Dashboard = ({ onLogout }) => {
         <div className="flex flex-col gap-8">
           {/* HERO Health Summary */}
           <section className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm relative overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.05)_0%,transparent_70%)]">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-sm bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <path d="M12 19V5M5 12l7-7 7 7"/>
-                </svg>
-                <span>1.2 kg <small className="font-normal opacity-70 ml-1">vs last month</small></span>
-              </div>
-            </div>
-
-            <h2 className="text-xl font-bold text-emerald-600 mb-1 leading-tight">Slightly above healthy range</h2>
-            <p className="text-slate-500 text-sm mb-8">Don't worry, small changes can make a big difference.</p>
-
-            <div className="mb-8">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">BMI (kg/m²)</div>
-              <div className="text-6xl font-bold text-slate-900 tracking-tighter my-4">25.14</div>
+            {(() => {
+              const weight = profile?.bmi?.weight || 0;
+              const heightCm = profile?.bmi?.height || 0;
+              const heightM = heightCm / 100;
+              const bmi = (weight > 0 && heightM > 0) ? (weight / (heightM * heightM)).toFixed(2) : '0.00';
               
-              <div className="mt-4">
-                <div className="h-2.5 rounded-full flex gap-1 relative overflow-hidden bg-slate-100">
-                  <div className="flex-1 bg-emerald-500 rounded-sm"></div>
-                  <div className="flex-1 bg-amber-500 rounded-sm"></div>
-                  <div className="flex-1 bg-red-500 rounded-sm"></div>
-                  <div className="absolute top-0 w-4 h-full bg-white border-2 border-slate-900 rounded-full shadow-md z-10" style={{ left: '60%', transform: 'translateX(-50%)' }}></div>
-                </div>
-                <div className="flex justify-between mt-2 text-[10px] font-bold text-slate-400">
-                  <span>18.5</span>
-                  <span>24.9</span>
-                  <span>29.9</span>
-                </div>
-              </div>
-            </div>
+              let status = { text: 'Data missing', color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-100', percentage: '0%' };
+              if (bmi > 0) {
+                let pct = 0;
+                if (bmi < 18.5) {
+                  status = { text: 'Underweight range', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' };
+                  pct = (bmi / 18.5) * 15; // 0-15%
+                } else if (bmi < 25) {
+                  status = { text: 'Healthy weight range', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' };
+                  pct = 15 + ((bmi - 18.5) / (25 - 18.5)) * 25; // 15-40%
+                } else if (bmi < 30) {
+                  status = { text: 'Overweight range', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' };
+                  pct = 45 + ((bmi - 25) / (30 - 25)) * 25; // 45-70%
+                } else {
+                  status = { text: 'Obese range', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' };
+                  pct = 75 + Math.min(((bmi - 30) / 10) * 20, 20); // 75-95%
+                }
+                status.percentage = `${pct}%`;
+              }
 
-            <div className="flex flex-col sm:flex-row gap-6 sm:gap-12 py-6 border-y border-slate-50 mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
-                    <path d="M3 6h18"></path>
-                    <path d="M16 10a4 4 0 0 1-8 0"></path>
-                  </svg>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">WEIGHT</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-slate-900">75 <small className="text-sm font-medium opacity-50">kg</small></span>
-                    <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-600">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              return (
+                <>
+                  <div className="flex justify-between items-start mb-6">
+                    <div className={`flex items-center gap-1.5 ${status.color} font-bold text-sm ${status.bg} px-3 py-1 rounded-full border ${status.border}`}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                         <path d="M12 19V5M5 12l7-7 7 7"/>
                       </svg>
-                      0.6 kg
-                    </span>
+                      <span>Keep it up! <small className="font-normal opacity-70 ml-1">Daily goal tracking</small></span>
+                    </div>
                   </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">HEIGHT</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-slate-900">5'8"</span>
-                    <span className="text-[10px] font-bold text-slate-400">No change</span>
+
+                  <h2 className={`text-xl font-bold ${status.color} mb-1 leading-tight`}>{status.text}</h2>
+                  <p className="text-slate-500 text-sm mb-8">
+                    {bmi > 0 ? (bmi < 25 ? "You're in great shape! Keep maintaining your lifestyle." : "A bit of exercise and a balanced diet can help.") : "Please update your height and weight in profile."}
+                  </p>
+
+                  <div className="mb-8">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">BMI (kg/m²)</div>
+                    <div className="text-6xl font-bold text-slate-900 tracking-tighter my-4">{bmi}</div>
+                    
+                    <div className="mt-4">
+                      <div className="h-2.5 rounded-full flex gap-1 relative overflow-hidden bg-slate-100">
+                        <div className="flex-1 bg-emerald-500 rounded-sm"></div>
+                        <div className="flex-1 bg-amber-500 rounded-sm"></div>
+                        <div className="flex-1 bg-red-500 rounded-sm"></div>
+                        <div className="absolute top-0 w-4 h-full bg-white border-2 border-slate-900 rounded-full shadow-md z-10 transition-all duration-1000" style={{ left: status.percentage, transform: 'translateX(-50%)' }}></div>
+                      </div>
+                      <div className="flex justify-between mt-2 text-[10px] font-bold text-slate-400">
+                        <span>18.5</span>
+                        <span>24.9</span>
+                        <span>29.9</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
+
+                  <div className="flex flex-col sm:flex-row gap-6 sm:gap-12 py-6 border-y border-slate-50 mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                          <path d="M3 6h18"></path>
+                          <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">WEIGHT</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-bold text-slate-900">{weight || '--'} <small className="text-sm font-medium opacity-50">kg</small></span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">HEIGHT</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-bold text-slate-900">{heightCm || '--'} <small className="text-sm font-medium opacity-50">cm</small></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/30">
               <div className="flex items-center gap-3 text-sm text-emerald-800">
@@ -278,21 +335,44 @@ const Dashboard = ({ onLogout }) => {
           <section className="mb-8">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-slate-900">Health Insights</h3>
-              <button className="text-sm font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all">View all</button>
+              <button className="text-sm font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all" onClick={() => navigate('/articles')}>View all</button>
             </div>
-            <div className="flex flex-col sm:flex-row bg-white border border-slate-100 rounded-[24px] overflow-hidden shadow-sm group cursor-pointer hover:shadow-lg transition-all border-l-4 border-l-blue-600">
-              <img src={storyImage} alt="Article" className="w-full sm:w-60 h-48 sm:h-auto object-cover group-hover:scale-105 transition-transform duration-500" />
-              <div className="p-6 flex-1 flex flex-col justify-center">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Dr. Amrit Raj Subedi | 5 min read</div>
-                <h4 className="text-base font-bold text-slate-900 mb-2 leading-tight">Improving patient care through digital empathy</h4>
-                <p className="text-sm text-slate-500 mb-4 leading-relaxed">How we balance innovation with the human touch essential for recovery...</p>
-                <button className="flex items-center gap-1.5 text-blue-600 font-bold text-sm hover:translate-x-1 transition-all self-start">
-                  Read article 
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                </button>
-              </div>
+            
+            <div className="flex flex-col gap-6">
+              {articles.length > 0 ? (
+                articles.map(article => (
+                  <div 
+                    key={article._id} 
+                    className="flex flex-col sm:flex-row bg-white border border-slate-100 rounded-[24px] overflow-hidden shadow-sm group cursor-pointer hover:shadow-lg transition-all border-l-4 border-l-blue-600"
+                    onClick={() => navigate(`/articles/${article._id}`)}
+                  >
+                    <div className="w-full sm:w-48 h-40 sm:h-auto overflow-hidden">
+                      <img 
+                        src={article.featureImage ? (article.featureImage.startsWith('http') || article.featureImage.startsWith('data:') ? article.featureImage : `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${article.featureImage}`) : storyImage} 
+                        alt={article.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      />
+                    </div>
+                    <div className="p-6 flex-1 flex flex-col justify-center">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                        {article.author?.doctorDetails?.salutation || 'Dr.'} {article.author?.name} | {article.readTime || '5 min'} read
+                      </div>
+                      <h4 className="text-base font-bold text-slate-900 mb-2 leading-tight group-hover:text-blue-600 transition-colors line-clamp-1">{article.title}</h4>
+                      <p className="text-sm text-slate-500 mb-4 leading-relaxed line-clamp-2">{article.summary || article.content?.substring(0, 120) + '...'}</p>
+                      <button className="flex items-center gap-1.5 text-blue-600 font-bold text-sm hover:translate-x-1 transition-all self-start">
+                        Read article 
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-12 bg-white rounded-3xl border border-dashed border-slate-200 text-center text-slate-400 font-medium">
+                  Loading latest insights...
+                </div>
+              )}
             </div>
           </section>
         </div>

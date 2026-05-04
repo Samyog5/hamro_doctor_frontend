@@ -500,7 +500,83 @@ function Register({ onLogin }) {
                     />
                   </div>
                 </div>
-                <button type="submit" className="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all">Submit Credentials</button>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="relative flex items-center group">
+                    <div className="absolute left-4 z-10 pointer-events-none transition-colors">
+                      <svg className="text-blue-500 group-focus-within:text-blue-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                      </svg>
+                    </div>
+                    <select
+                      className="w-full pl-12 pr-4 py-3.5 bg-white border-[1.5px] border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none transition-all text-sm text-slate-700 font-bold appearance-none cursor-pointer"
+                      value={doctorData.salutation}
+                      onChange={(e) => setDoctorData({ ...doctorData, salutation: e.target.value })}
+                      required
+                    >
+                      <option value="Dr.">Dr.</option>
+                      <option value="Prof. Dr.">Prof. Dr.</option>
+                      <option value="Assoc. Prof. Dr.">Assoc. Prof. Dr.</option>
+                      <option value="Asst. Prof. Dr.">Asst. Prof. Dr.</option>
+                    </select>
+                  </div>
+                  <div className="relative flex items-center group">
+                    <div className="absolute left-4 z-10 pointer-events-none transition-colors">
+                      <svg className="text-blue-500 group-focus-within:text-blue-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Qualification (e.g. MBBS, MD)"
+                      className="w-full pl-12 pr-4 py-3.5 bg-white border-[1.5px] border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none transition-all text-sm text-slate-700 placeholder:text-slate-400 font-medium"
+                      value={doctorData.qualification}
+                      onChange={(e) => setDoctorData({ ...doctorData, qualification: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="relative flex items-center group">
+                    <div className="absolute left-4 z-10 pointer-events-none transition-colors">
+                      <svg className="text-blue-500 group-focus-within:text-blue-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    </div>
+                    <input
+                      type="number"
+                      placeholder="Years of Experience"
+                      className="w-full pl-12 pr-4 py-3.5 bg-white border-[1.5px] border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none transition-all text-sm text-slate-700 placeholder:text-slate-400 font-medium"
+                      value={doctorData.experience}
+                      onChange={(e) => setDoctorData({ ...doctorData, experience: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="relative flex items-center group">
+                    <div className="absolute left-4 z-10 pointer-events-none transition-colors">
+                      <svg className="text-blue-500 group-focus-within:text-blue-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="8.5" cy="7" r="4" />
+                      </svg>
+                    </div>
+                    <select
+                      className="w-full pl-12 pr-4 py-3.5 bg-white border-[1.5px] border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none transition-all text-sm text-slate-700 font-bold appearance-none cursor-pointer"
+                      value={doctorData.gender}
+                      onChange={(e) => setDoctorData({ ...doctorData, gender: e.target.value })}
+                      required
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all mt-2 uppercase tracking-widest text-[10px]">Verify Clinical Credentials</button>
               </form>
             )}
 

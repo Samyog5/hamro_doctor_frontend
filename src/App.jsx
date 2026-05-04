@@ -12,6 +12,8 @@ import Chat from './pages/Chat'
 import Articles from './pages/Articles'
 import Forum from './pages/Forum'
 import Messages from './pages/Messages'
+import Profile from './pages/Profile'
+import ArticleDetail from './pages/ArticleDetail'
 import DoctorDashboard from './pages/DoctorDashboard'
 import DoctorOnboarding from './pages/DoctorOnboarding'
 import Layout from './components/Layout'
@@ -46,6 +48,10 @@ function App() {
     setUser(null)
   }
 
+  const handleUpdateUser = (updatedUser) => {
+    setUser(updatedUser)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -73,8 +79,10 @@ function App() {
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/questions" element={<Questions />} />
           <Route path="/articles" element={<Articles />} />
+          <Route path="/articles/:id" element={<ArticleDetail />} />
           <Route path="/forum" element={<Forum />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/profile" element={<Profile onUpdateUser={handleUpdateUser} />} />
           <Route path="/chat/:id" element={<Chat />} />
           <Route path="/doctor-dashboard" element={<DoctorDashboard onLogout={handleLogout} />} />
         </Route>

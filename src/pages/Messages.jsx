@@ -43,6 +43,7 @@ const Messages = () => {
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
+  const remoteStreamRef = useRef(null);
   const connectionRef = useRef();
   const streamRef = useRef();
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
@@ -147,12 +148,17 @@ const Messages = () => {
     });
 
     socket.on('call_signal', (data) => {
+      console.log("📥 SOCKET RECEIVED:", data.type, data);
       if (data.type === 'offer') {
         setReceivingCall(true);
         setCallerSignal(data.signal);
         setCallType(data.callType || 'audio');
       } else if (data.type === 'answer') {
         setCallAccepted(true);
+        if (connectionRef.current) {
+          connectionRef.current.signal(data.signal);
+        }
+      } else if (data.type === 'candidate') {
         if (connectionRef.current) {
           connectionRef.current.signal(data.signal);
         }
@@ -182,6 +188,9 @@ const Messages = () => {
   const startCall = async (type) => {
     if (!selectedChat) return;
     try {
+      // Record session in backend BEFORE starting peer (stabilize state)
+      await recordCallSession(type);
+      
       setCallType(type);
       const constraints = { 
         audio: true, 
@@ -196,27 +205,40 @@ const Messages = () => {
 
       const peer = new Peer({
         initiator: true,
-        trickle: false,
+        trickle: true,
         stream: mediaStream,
         config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
       });
 
       peer.on('signal', (data) => {
+        console.log("📤 SIGNAL OUT:", data.type || (data.candidate ? 'candidate' : 'sdp'));
         socketRef.current.emit('call_signal', {
           consultationId: selectedChat._id,
-          type: 'offer',
+          type: data.candidate ? 'candidate' : 'offer',
           callType: type,
           signal: data,
           from: user._id
         });
       });
 
-      peer.on('stream', (remoteStream) => {
-        setRemoteStream(remoteStream);
+      peer.on('track', (track, incomingStream) => {
+        console.log("TRACK RECEIVED");
+
+        const finalStream = incomingStream || new MediaStream([track]);
+
+        remoteStreamRef.current = finalStream;
+        setRemoteStream(finalStream);
+
+        if (remoteVideoRef.current) {
+          console.log("IMMEDIATE ATTACH");
+          remoteVideoRef.current.srcObject = finalStream;
+        }
       });
 
+      peer.on('connect', () => console.log("✅ PEER CONNECTED"));
+      peer.on('error', err => console.log("🔥 PEER ERROR:", err));
+
       connectionRef.current = peer;
-      recordCallSession(type);
     } catch (err) {
       console.error('Error accessing devices:', err);
       alert('Could not access microphone/camera.');
@@ -237,7 +259,7 @@ const Messages = () => {
 
       const peer = new Peer({
         initiator: false,
-        trickle: false,
+        trickle: true,
         stream: mediaStream,
         config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
       });
@@ -246,21 +268,34 @@ const Messages = () => {
       setReceivingCall(false);
 
       peer.on('signal', (data) => {
+        console.log("📤 SIGNAL OUT:", data.type || (data.candidate ? 'candidate' : 'sdp'));
         socketRef.current.emit('call_signal', {
           consultationId: selectedChat._id,
-          type: 'answer',
+          type: data.candidate ? 'candidate' : 'answer',
           signal: data,
           from: user._id
         });
       });
 
-      peer.on('stream', (remoteStream) => {
-        setRemoteStream(remoteStream);
+      peer.on('track', (track, incomingStream) => {
+        console.log("TRACK RECEIVED");
+
+        const finalStream = incomingStream || new MediaStream([track]);
+
+        remoteStreamRef.current = finalStream;
+        setRemoteStream(finalStream);
+
+        if (remoteVideoRef.current) {
+          console.log("IMMEDIATE ATTACH");
+          remoteVideoRef.current.srcObject = finalStream;
+        }
       });
+
+      peer.on('connect', () => console.log("✅ PEER CONNECTED"));
+      peer.on('error', err => console.log("🔥 PEER ERROR:", err));
 
       peer.signal(callerSignal);
       connectionRef.current = peer;
-      recordCallSession(callType);
     } catch (err) {
       console.error('Error answering call:', err);
     }
@@ -318,9 +353,11 @@ const Messages = () => {
     }
     setStream(null);
     if (connectionRef.current) {
-      connectionRef.current.destroy();
+      try { connectionRef.current.destroy(); } catch(e) {}
+      connectionRef.current = null;
     }
     setRemoteStream(null);
+    remoteStreamRef.current = null;
   };
 
   const endCall = () => {
@@ -349,6 +386,7 @@ const Messages = () => {
     }
   };
 
+  // Deterministic Stream Attachment
   useEffect(() => {
     if (stream && localVideoRef.current) {
       localVideoRef.current.srcObject = stream;
@@ -357,9 +395,24 @@ const Messages = () => {
 
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current) {
+      console.log("Attaching remote stream via useEffect");
       remoteVideoRef.current.srcObject = remoteStream;
     }
-  }, [remoteStream, calling, callAccepted]);
+  }, [remoteStream, callAccepted]);
+
+  // Force attach when ref becomes ready (retry interval)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (remoteVideoRef.current && remoteStreamRef.current) {
+        if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
+          console.log("FORCING ATTACH (retry)");
+          remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        }
+      }
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const MAX_CALL_SECONDS = 15 * 60;
 
@@ -527,8 +580,12 @@ const Messages = () => {
                   className={`px-4 py-4 cursor-pointer transition-all flex items-center gap-4 border-b border-slate-50/50 ${isActive ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
                 >
                   <div className="relative">
-                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center font-bold shadow-sm">
-                      {other?.name?.charAt(0)}
+                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center font-bold shadow-sm overflow-hidden">
+                      {other?.profile?.avatar ? (
+                        <img src={other.profile.avatar} alt={other.name} className="w-full h-full object-cover" />
+                      ) : (
+                        other?.name?.charAt(0)
+                      )}
                     </div>
                     <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
                   </div>
@@ -565,8 +622,16 @@ const Messages = () => {
                     <line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline>
                   </svg>
                 </button>
-                <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-blue-100">
-                  {(isDoctor ? selectedChat.patient?.name : selectedChat.doctor?.name)?.charAt(0)}
+                <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-blue-100 overflow-hidden">
+                  {(isDoctor ? selectedChat.patient : selectedChat.doctor)?.profile?.avatar ? (
+                    <img 
+                      src={(isDoctor ? selectedChat.patient : selectedChat.doctor).profile.avatar} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    (isDoctor ? selectedChat.patient?.name : selectedChat.doctor?.name)?.charAt(0)
+                  )}
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">
@@ -720,36 +785,48 @@ const Messages = () => {
         )}
       </section>
 
-      {/* Call Overlay */}
-      {(calling || callAccepted) && (
-        <div className="absolute inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
-           {callType === 'video' ? (
-             <>
-               <video ref={remoteVideoRef} autoPlay playsInline className={`w-full h-full object-cover transition-opacity duration-500 ${remoteStream ? 'opacity-100' : 'opacity-0'}`} />
-               {!remoteStream && (
-                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
-                   <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-3xl font-bold text-white animate-pulse mb-4">
-                     {otherParty?.name?.charAt(0)}
-                   </div>
-                   <p className="text-white font-bold tracking-wider animate-pulse">{callStatus || 'Connecting Video...'}</p>
-                 </div>
-               )}
-               <div className="absolute top-6 right-6 w-32 h-48 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl z-50 bg-slate-800">
-                 <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
-               </div>
-             </>
-           ) : (
-             <div className="flex flex-col items-center">
-               <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-bold text-white shadow-2xl mb-8 relative">
-                 <div className="absolute inset-0 rounded-full border-4 border-blue-500 animate-ping opacity-25"></div>
-                 {otherParty?.name?.charAt(0)}
-               </div>
-               <h2 className="text-2xl font-bold text-white mb-2">{isDoctor ? otherParty?.name : `Dr. ${otherParty?.name}`}</h2>
-               <p className="text-blue-400 font-bold tracking-widest uppercase text-xs mb-8">{callAccepted ? formatTimer(callTimer) : (callStatus || 'Calling...')}</p>
-               <audio ref={remoteVideoRef} autoPlay className="hidden" />
-             </div>
-           )}
-           <div className="absolute bottom-12 flex items-center gap-6 px-8 py-4 bg-white/10 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl">
+
+      {/* Call Overlay - Always Rendered but hidden if not in call */}
+      <div 
+        className="absolute inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300"
+        style={{ display: (calling || callAccepted) ? "flex" : "none" }}
+      >
+          {callType === 'video' ? (
+            <>
+              {/* Remote Video Display */}
+              <video 
+                ref={remoteVideoRef}
+                autoPlay 
+                playsInline 
+                onLoadedMetadata={(e) => e.target.play()}
+                className={`w-full h-full object-cover transition-opacity duration-500 ${remoteStream ? 'opacity-100' : 'opacity-0'}`} 
+              />
+              
+              {!remoteStream && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
+                  <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-3xl font-bold text-white animate-pulse mb-4">
+                    {otherParty?.name?.charAt(0)}
+                  </div>
+                  <p className="text-white font-bold tracking-wider animate-pulse">{callStatus || 'Connecting Video...'}</p>
+                </div>
+              )}
+              <div className="absolute top-6 right-6 w-32 h-48 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl z-50 bg-slate-800">
+                <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center">
+              <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-bold text-white shadow-2xl mb-8 relative">
+                <div className="absolute inset-0 rounded-full border-4 border-blue-500 animate-ping opacity-25"></div>
+                {otherParty?.name?.charAt(0)}
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">{isDoctor ? otherParty?.name : `Dr. ${otherParty?.name}`}</h2>
+              <p className="text-blue-400 font-bold tracking-widest uppercase text-xs mb-8">{callAccepted ? formatTimer(callTimer) : (callStatus || 'Calling...')}</p>
+              <audio ref={remoteVideoRef} autoPlay />
+            </div>
+          )}
+          
+          <div className="absolute bottom-12 flex items-center gap-6 px-8 py-4 bg-white/10 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl">
               <button className={`w-14 h-14 flex items-center justify-center rounded-full transition-all ${isMuted ? 'bg-red-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`} onClick={toggleMute}>
                 {isMuted ? (
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -769,9 +846,8 @@ const Messages = () => {
               <button className="w-16 h-16 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 shadow-xl" onClick={endCall}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{transform: 'rotate(135deg)', transformOrigin: 'center'}}><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" /></svg>
               </button>
-           </div>
-        </div>
-      )}
+          </div>
+         </div>
 
       {/* Incoming Call Modal */}
       {receivingCall && (
@@ -815,11 +891,15 @@ const Messages = () => {
         </div>
       )}
 
-      {(!callAccepted || callType !== 'video') && (
-        <audio ref={remoteVideoRef} autoPlay className="hidden" />
-      )}
+      <audio 
+        ref={remoteVideoRef} 
+        autoPlay 
+        style={{ display: (!callAccepted || callType !== 'video') ? "block" : "none" }} 
+        className="hidden" 
+      />
     </main>
   );
 };
 
 export default Messages;
+

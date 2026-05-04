@@ -41,11 +41,13 @@ const Calls = () => {
               const displayInfo = isDoctor ? {
                 name: con.patient?.name || 'Unknown Patient',
                 avatar: con.patient?.name?.charAt(0) || 'P',
+                photo: con.patient?.profile?.avatar,
                 subtext: 'Patient',
                 role: 'Patient'
               } : {
                 name: `Dr. ${con.doctor?.name || 'Unknown Doctor'}`,
                 avatar: con.doctor?.name?.charAt(0) || 'D',
+                photo: con.doctor?.profile?.avatar,
                 subtext: con.doctor?.doctorDetails?.speciality || 'General Physician',
                 role: 'Doctor'
               };
@@ -57,6 +59,13 @@ const Calls = () => {
                     if (session.durationInSeconds !== undefined && session.durationInSeconds !== null) {
                       const mins = Math.floor(session.durationInSeconds / 60);
                       const secs = session.durationInSeconds % 60;
+                      durationStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+                    } else if (session.startTime && session.endTime) {
+                      const start = new Date(session.startTime);
+                      const end = new Date(session.endTime);
+                      const diffSecs = Math.floor((end - start) / 1000);
+                      const mins = Math.floor(diffSecs / 60);
+                      const secs = diffSecs % 60;
                       durationStr = `${mins}:${secs.toString().padStart(2, '0')}`;
                     } else if (session.durationInMinutes) {
                       durationStr = `${session.durationInMinutes}:00`;
@@ -142,8 +151,12 @@ const Calls = () => {
                   <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_40px] p-6 items-center">
                     <div>
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-base group-hover:scale-110 transition-transform uppercase">
-                          {call.display.avatar}
+                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-base group-hover:scale-110 transition-transform uppercase overflow-hidden">
+                          {call.display.photo ? (
+                            <img src={call.display.photo} alt={call.display.name} className="w-full h-full object-cover" />
+                          ) : (
+                            call.display.avatar
+                          )}
                         </div>
                         <div>
                           <div className="text-sm font-bold text-slate-900 mb-0.5">{call.display.name}</div>
@@ -180,8 +193,12 @@ const Calls = () => {
                   <div className="lg:hidden p-5 flex flex-col gap-4">
                     <div className="flex items-center justify-between" onClick={() => toggleExpand(call.id)}>
                       <div className="flex items-center gap-4">
-                        <div className="w-11 h-11 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-100 uppercase">
-                          {call.display.avatar}
+                        <div className="w-11 h-11 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-100 uppercase overflow-hidden">
+                          {call.display.photo ? (
+                            <img src={call.display.photo} alt={call.display.name} className="w-full h-full object-cover" />
+                          ) : (
+                            call.display.avatar
+                          )}
                         </div>
                         <div>
                           <div className="text-sm font-bold text-slate-900 leading-tight">{call.display.name}</div>
