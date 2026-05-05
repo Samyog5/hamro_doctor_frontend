@@ -19,7 +19,7 @@ function DoctorDashboard({ onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
   const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
 
   const fetchDashboardData = async () => {
@@ -116,6 +116,13 @@ function DoctorDashboard({ onLogout }) {
     }
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -124,23 +131,31 @@ function DoctorDashboard({ onLogout }) {
     );
   }
 
+  const greeting = getGreeting();
+
   return (
     <main className="flex-1 lg:ml-[280px] py-12 px-4 lg:px-16 max-h-screen overflow-y-auto">
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-12">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
-            Good morning, {userData?.doctorDetails?.salutation} {userData?.name?.split(' ')[0]}
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" className="animate-pulse">
-              <circle cx="12" cy="12" r="5"></circle>
-              <line x1="12" y1="1" x2="12" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="23"></line>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-              <line x1="1" y1="12" x2="3" y2="12"></line>
-              <line x1="21" y1="12" x2="23" y2="12"></line>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
+            {greeting}, {userData?.doctorDetails?.salutation} {userData?.name?.split(' ')[0]}
+            {greeting === 'Good evening' ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5" className="animate-pulse">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" className="animate-pulse">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            )}
           </h1>
           <p className="text-slate-500 text-sm mt-1">Clinical Command Center</p>
         </div>
@@ -285,7 +300,7 @@ function DoctorDashboard({ onLogout }) {
                         </div>
                       </div>
                     </div>
-                    <button className="px-8 py-3 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg shadow-slate-200 hover:-translate-y-0.5 transition-all" onClick={() => navigate(`/chat/${consult._id}`)}>Resume Session</button>
+                    <button className="px-8 py-3 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg shadow-slate-200 hover:-translate-y-0.5 transition-all" onClick={() => navigate(`/messages/${consult._id}`)}>Resume Session</button>
                   </div>
                 )) : (
                   <div className="flex flex-col items-center justify-center py-16 bg-slate-50/50 rounded-[32px] border border-dashed border-slate-200 text-center">

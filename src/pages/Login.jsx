@@ -18,7 +18,7 @@ function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       const response = await fetch(`${apiUrl}/api/${apiVersion}/auth/login`, {
         method: 'POST',

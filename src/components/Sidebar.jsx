@@ -255,7 +255,7 @@ const Sidebar = ({ userData, onLogout, isOpen, onClose }) => {
             <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-lg shadow-blue-200 transition-transform group-hover/profile:scale-110 overflow-hidden">
               {userData.profile?.avatar ? (
                 <img 
-                  src={userData.profile.avatar.startsWith('http') || userData.profile.avatar.startsWith('data:') ? userData.profile.avatar : `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${userData.profile.avatar}`} 
+                  src={userData.profile.avatar.startsWith('http') || userData.profile.avatar.startsWith('data:') ? userData.profile.avatar : `${import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001'}${userData.profile.avatar}`} 
                   alt="Avatar" 
                   className="w-full h-full object-cover" 
                 />

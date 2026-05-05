@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import Peer from 'simple-peer';
 
 const Messages = () => {
   const navigate = useNavigate();
+  const { id: urlChatId } = useParams();
   const [conversations, setConversations] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -19,7 +20,7 @@ const Messages = () => {
   const [receivingCall, setReceivingCall] = useState(false);
   const [callAccepted, setCallAccepted] = useState(false);
   const [callerSignal, setCallerSignal] = useState(null);
-  const [stream, setStream] = useState(null);
+  const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
@@ -43,10 +44,12 @@ const Messages = () => {
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
+  const remoteAudioRef = useRef();
   const remoteStreamRef = useRef(null);
   const connectionRef = useRef();
   const streamRef = useRef();
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+  const pendingSignals = useRef([]);
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
   const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
 
   const scrollToBottom = () => {
@@ -71,8 +74,15 @@ const Messages = () => {
           const activeCons = data.consultations.filter(c => c.status === 'active');
           setConversations(activeCons);
           
-          // Optionally select the first one if it exists
-          if (activeCons.length > 0) {
+          // Select chat based on URL ID or first available
+          if (urlChatId) {
+            const targetChat = activeCons.find(c => c._id === urlChatId);
+            if (targetChat) {
+              handleSelectChat(targetChat);
+            } else if (activeCons.length > 0) {
+              handleSelectChat(activeCons[0]);
+            }
+          } else if (activeCons.length > 0) {
             handleSelectChat(activeCons[0]);
           }
         }
@@ -96,7 +106,7 @@ const Messages = () => {
     return () => {
       socketRef.current.disconnect();
     };
-  }, []);
+  }, [urlChatId]);
 
   // Handle chat selection
   const handleSelectChat = async (consultation) => {
@@ -157,10 +167,14 @@ const Messages = () => {
         setCallAccepted(true);
         if (connectionRef.current) {
           connectionRef.current.signal(data.signal);
+        } else {
+          pendingSignals.current.push(data.signal);
         }
       } else if (data.type === 'candidate') {
         if (connectionRef.current) {
           connectionRef.current.signal(data.signal);
+        } else {
+          pendingSignals.current.push(data.signal);
         }
       }
     });
@@ -198,7 +212,7 @@ const Messages = () => {
       };
       
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-      setStream(mediaStream);
+      setLocalStream(mediaStream);
       streamRef.current = mediaStream;
       setCalling(true);
       setCallStatus(type === 'video' ? 'Starting Video Call...' : 'Calling...');
@@ -207,7 +221,13 @@ const Messages = () => {
         initiator: true,
         trickle: true,
         stream: mediaStream,
-        config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+        config: { 
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+          ] 
+        }
       });
 
       peer.on('signal', (data) => {
@@ -254,14 +274,20 @@ const Messages = () => {
       };
       
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-      setStream(mediaStream);
+      setLocalStream(mediaStream);
       streamRef.current = mediaStream;
 
       const peer = new Peer({
         initiator: false,
         trickle: true,
         stream: mediaStream,
-        config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+        config: { 
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+          ] 
+        }
       });
 
       setCallAccepted(true);
@@ -296,6 +322,22 @@ const Messages = () => {
 
       peer.signal(callerSignal);
       connectionRef.current = peer;
+
+      // Process any signals that arrived before we answered
+      if (pendingSignals.current.length > 0) {
+        console.log(`Processing ${pendingSignals.current.length} queued signals...`);
+        pendingSignals.current.forEach(sig => peer.signal(sig));
+        pendingSignals.current = [];
+      }
+
+      // Monitor ICE state
+      peer._pc.oniceconnectionstatechange = () => {
+        console.log("🧊 ICE STATE:", peer._pc.iceConnectionState);
+        if (peer._pc.iceConnectionState === 'failed') {
+          console.error("WebRTC Connection Failed. Check firewall or network isolation.");
+        }
+      };
+
     } catch (err) {
       console.error('Error answering call:', err);
     }
@@ -351,13 +393,14 @@ const Messages = () => {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    setStream(null);
+    setLocalStream(null);
     if (connectionRef.current) {
       try { connectionRef.current.destroy(); } catch(e) {}
       connectionRef.current = null;
     }
     setRemoteStream(null);
     remoteStreamRef.current = null;
+    pendingSignals.current = [];
   };
 
   const endCall = () => {
@@ -371,16 +414,16 @@ const Messages = () => {
   };
 
   const toggleMute = () => {
-    if (stream) {
-      const audioTrack = stream.getAudioTracks()[0];
+    if (localStream) {
+      const audioTrack = localStream.getAudioTracks()[0];
       audioTrack.enabled = !audioTrack.enabled;
       setIsMuted(!audioTrack.enabled);
     }
   };
 
   const toggleVideo = () => {
-    if (stream && callType === 'video') {
-      const videoTrack = stream.getVideoTracks()[0];
+    if (localStream && callType === 'video') {
+      const videoTrack = localStream.getVideoTracks()[0];
       videoTrack.enabled = !videoTrack.enabled;
       setIsVideoOff(!videoTrack.enabled);
     }
@@ -388,10 +431,10 @@ const Messages = () => {
 
   // Deterministic Stream Attachment
   useEffect(() => {
-    if (stream && localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
+    if (localStream && localVideoRef.current) {
+      localVideoRef.current.srcObject = localStream;
     }
-  }, [stream, calling, callAccepted]);
+  }, [localStream, calling, callAccepted]);
 
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current) {
@@ -403,10 +446,17 @@ const Messages = () => {
   // Force attach when ref becomes ready (retry interval)
   useEffect(() => {
     const interval = setInterval(() => {
-      if (remoteVideoRef.current && remoteStreamRef.current) {
-        if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
-          console.log("FORCING ATTACH (retry)");
-          remoteVideoRef.current.srcObject = remoteStreamRef.current;
+      if (remoteStreamRef.current) {
+        if (callType === 'video' && remoteVideoRef.current) {
+          if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
+            console.log("FORCING ATTACH (Video retry)");
+            remoteVideoRef.current.srcObject = remoteStreamRef.current;
+          }
+        } else if (callType === 'audio' && remoteAudioRef.current) {
+          if (remoteAudioRef.current.srcObject !== remoteStreamRef.current) {
+            console.log("FORCING ATTACH (Audio retry)");
+            remoteAudioRef.current.srcObject = remoteStreamRef.current;
+          }
         }
       }
     }, 300);
@@ -822,7 +872,7 @@ const Messages = () => {
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">{isDoctor ? otherParty?.name : `Dr. ${otherParty?.name}`}</h2>
               <p className="text-blue-400 font-bold tracking-widest uppercase text-xs mb-8">{callAccepted ? formatTimer(callTimer) : (callStatus || 'Calling...')}</p>
-              <audio ref={remoteVideoRef} autoPlay />
+              <audio ref={remoteAudioRef} autoPlay />
             </div>
           )}
           
@@ -892,7 +942,7 @@ const Messages = () => {
       )}
 
       <audio 
-        ref={remoteVideoRef} 
+        ref={remoteAudioRef} 
         autoPlay 
         style={{ display: (!callAccepted || callType !== 'video') ? "block" : "none" }} 
         className="hidden" 

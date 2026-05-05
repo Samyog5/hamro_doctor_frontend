@@ -36,7 +36,7 @@ function App() {
       // Background refresh of user data to ensure profile/avatar is up to date
       const refreshUser = async () => {
         try {
-          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+          const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
           const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
           const response = await fetch(`${apiUrl}/api/${apiVersion}/auth/me`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -119,9 +119,8 @@ function App() {
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/questions" element={<Questions />} />
           <Route path="/forum" element={<Forum />} />
-          <Route path="/messages" element={<Messages />} />
+          <Route path="/messages/:id?" element={<Messages />} />
           <Route path="/profile" element={<Profile onUpdateUser={handleUpdateUser} />} />
-          <Route path="/chat/:id" element={<Chat />} />
           <Route path="/doctor-dashboard" element={<DoctorDashboard onLogout={handleLogout} />} />
         </Route>
 
