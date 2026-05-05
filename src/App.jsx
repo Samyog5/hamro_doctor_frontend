@@ -17,6 +17,7 @@ import ArticleDetail from './pages/ArticleDetail'
 import DoctorDashboard from './pages/DoctorDashboard'
 import DoctorOnboarding from './pages/DoctorOnboarding'
 import Layout from './components/Layout'
+import Home from './pages/Home'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -29,7 +30,27 @@ function App() {
     const savedUser = localStorage.getItem('user')
     if (token && savedUser) {
       setIsAuthenticated(true)
-      setUser(JSON.parse(savedUser))
+      const parsedUser = JSON.parse(savedUser)
+      setUser(parsedUser)
+      
+      // Background refresh of user data to ensure profile/avatar is up to date
+      const refreshUser = async () => {
+        try {
+          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+          const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
+          const response = await fetch(`${apiUrl}/api/${apiVersion}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (data.success) {
+            setUser(data.user);
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
+        } catch (err) {
+          console.error('Background user refresh failed:', err);
+        }
+      };
+      refreshUser();
     }
     setLoading(false)
   }, [])
@@ -71,6 +92,25 @@ function App() {
           path="/register" 
           element={!isAuthenticated ? <Register onLogin={handleLogin} /> : <Navigate to={user?.role === 'doctor' ? "/doctor-dashboard" : "/dashboard"} />} 
         />
+
+        {/* 
+            DYNAMIC ROUTING FOR ARTICLES
+            Logged-in users see Articles within the Dashboard Layout.
+            Guest users see Articles as a standalone Public page.
+        */}
+        {!isAuthenticated ? (
+          <>
+            <Route path="/articles" element={<Articles isPublic={true} />} />
+            <Route path="/articles/:id" element={<ArticleDetail isPublic={true} />} />
+          </>
+        ) : (
+          <Route element={<Layout userData={user} onLogout={handleLogout} />}>
+            <Route path="/articles" element={<Articles />} />
+            <Route path="/articles/:id" element={<ArticleDetail />} />
+          </Route>
+        )}
+
+        {/* Main Authenticated Dashboard Layout */}
         <Route element={isAuthenticated ? <Layout userData={user || { name: 'User', avatar: 'U', id: 'PT-001' }} onLogout={handleLogout} /> : <Navigate to="/login" />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/consultations" element={<Consultations />} />
@@ -78,8 +118,6 @@ function App() {
           <Route path="/prescriptions" element={<Prescriptions />} />
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/questions" element={<Questions />} />
-          <Route path="/articles" element={<Articles />} />
-          <Route path="/articles/:id" element={<ArticleDetail />} />
           <Route path="/forum" element={<Forum />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/profile" element={<Profile onUpdateUser={handleUpdateUser} />} />
@@ -91,7 +129,7 @@ function App() {
 
         <Route 
           path="/" 
-          element={<Navigate to={isAuthenticated ? (user?.role === 'doctor' ? "/doctor-dashboard" : "/dashboard") : "/login"} />} 
+          element={<Home />} 
         />
       </Routes>
     </Router>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Articles = () => {
+const Articles = ({ isPublic }) => {
   const navigate = useNavigate();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,7 @@ const Articles = () => {
   };
 
   return (
-    <main className="flex-1 lg:ml-[280px] p-4 lg:p-8 bg-slate-50 min-h-screen font-['Poppins']">
+    <main className={`flex-1 ${!isPublic ? 'lg:ml-[280px]' : ''} p-4 lg:p-8 bg-slate-50 min-h-screen font-['Poppins']`}>
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-10">
           <div>
@@ -124,7 +124,11 @@ const Articles = () => {
               >
                 <div className="aspect-[16/9] bg-slate-100 relative overflow-hidden">
                   {article.featureImage ? (
-                    <img src={article.featureImage} alt={article.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <img 
+                      src={article.featureImage.startsWith('http') || article.featureImage.startsWith('data:') ? article.featureImage : `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${article.featureImage}`} 
+                      alt={article.title} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-300">
                       <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
@@ -144,7 +148,11 @@ const Articles = () => {
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-xs font-black overflow-hidden">
                       {article.author?.profile?.avatar ? (
-                        <img src={article.author.profile.avatar} alt="Author" className="w-full h-full object-cover" />
+                        <img 
+                          src={article.author.profile.avatar.startsWith('http') || article.author.profile.avatar.startsWith('data:') ? article.author.profile.avatar : `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${article.author.profile.avatar}`} 
+                          alt="Author" 
+                          className="w-full h-full object-cover" 
+                        />
                       ) : (
                         article.author?.name?.[0]
                       )}

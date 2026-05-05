@@ -296,7 +296,11 @@ const Dashboard = ({ onLogout }) => {
                   <div key={doctor._id} className="min-w-[200px] bg-white border border-slate-100 rounded-[24px] p-6 flex flex-col items-center text-center transition-all hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 group">
                     <div className="relative w-16 h-16 mb-4">
                       {doctor.profile?.avatar ? (
-                        <img src={doctor.profile.avatar} alt={doctor.name} className="w-full h-full rounded-2xl object-cover" />
+                        <img 
+                          src={doctor.profile.avatar.startsWith('http') || doctor.profile.avatar.startsWith('data:') ? doctor.profile.avatar : `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${doctor.profile.avatar}`} 
+                          alt={doctor.name} 
+                          className="w-full h-full rounded-2xl object-cover" 
+                        />
                       ) : (
                         <div className="w-full h-full rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">{doctor.name.charAt(0)}</div>
                       )}

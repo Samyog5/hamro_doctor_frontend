@@ -234,7 +234,11 @@ const Profile = ({ onUpdateUser }) => {
                   onClick={() => document.getElementById('avatar-input').click()}
                 >
                   {user.profile?.avatar ? (
-                    <img src={user.profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    <img 
+                      src={user.profile.avatar.startsWith('http') || user.profile.avatar.startsWith('data:') ? user.profile.avatar : `${apiUrl}${user.profile.avatar}`} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover" 
+                    />
                   ) : (
                     user.name?.charAt(0)
                   )}

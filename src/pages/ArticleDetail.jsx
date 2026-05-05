@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-const ArticleDetail = () => {
+const ArticleDetail = ({ isPublic }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [article, setArticle] = useState(null);
@@ -66,10 +66,15 @@ const ArticleDetail = () => {
   };
 
   const handleToggleInteraction = async (type) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    
     if (interactionLoading) return;
     setInteractionLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`${apiUrl}/api/${apiVersion}/articles/${id}/${type}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -181,7 +186,7 @@ const ArticleDetail = () => {
 
   if (loading) {
     return (
-      <main className="flex-1 lg:ml-[280px] min-h-screen bg-white flex items-center justify-center">
+      <main className={`flex-1 ${!isPublic ? 'lg:ml-[280px]' : ''} min-h-screen bg-white flex items-center justify-center`}>
         <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
       </main>
     );
@@ -189,7 +194,7 @@ const ArticleDetail = () => {
 
   if (!article) {
     return (
-      <main className="flex-1 lg:ml-[280px] min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
+      <main className={`flex-1 ${!isPublic ? 'lg:ml-[280px]' : ''} min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8`}>
         <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-6 text-slate-300 shadow-sm">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
@@ -206,11 +211,14 @@ const ArticleDetail = () => {
   const isDisliked = article.dislikes?.includes(user._id);
 
   return (
-    <main className="flex-1 lg:ml-[280px] min-h-screen bg-white font-['Poppins']">
-      {/* Hero Header */}
+    <main className={`flex-1 ${!isPublic ? 'lg:ml-[280px]' : ''} min-h-screen bg-white font-['Poppins']`}>
       <div className="relative h-[300px] lg:h-[450px] overflow-hidden bg-slate-900">
         {article.featureImage ? (
-          <img src={article.featureImage} alt={article.title} className="w-full h-full object-cover opacity-60" />
+          <img 
+            src={article.featureImage.startsWith('http') || article.featureImage.startsWith('data:') ? article.featureImage : `${apiUrl}${article.featureImage}`} 
+            alt={article.title} 
+            className="w-full h-full object-cover opacity-60" 
+          />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-800 opacity-80" />
         )}
@@ -272,29 +280,49 @@ const ArticleDetail = () => {
               </div>
 
               {/* Add Comment Form */}
-              <form onSubmit={handleAddComment} className="flex gap-4 group">
-                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center font-black text-lg flex-shrink-0 overflow-hidden">
-                  {user.profile?.avatar ? (
-                    <img src={user.profile.avatar} alt="User" className="w-full h-full object-cover" />
-                  ) : (
-                    user.name?.charAt(0)
-                  )}
+              {user?._id ? (
+                <form onSubmit={handleAddComment} className="flex gap-4 group">
+                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center font-black text-lg flex-shrink-0 overflow-hidden">
+                    {user.profile?.avatar ? (
+                      <img src={user.profile.avatar} alt="User" className="w-full h-full object-cover" />
+                    ) : (
+                      user.name?.charAt(0)
+                    )}
+                  </div>
+                  <div className="flex-1 relative">
+                    <textarea 
+                      placeholder="Share your curiosity or ask a question..."
+                      className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 outline-none transition-all resize-none h-24"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                    />
+                    <button 
+                      type="submit"
+                      className="absolute bottom-3 right-3 bg-blue-600 text-white px-6 py-2 rounded-xl text-xs font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all opacity-0 group-focus-within:opacity-100 translate-y-2 group-focus-within:translate-y-0"
+                    >
+                      Post Curiosity
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="bg-slate-50 p-8 rounded-[40px] text-center border-2 border-dashed border-slate-200">
+                  <p className="text-slate-500 font-bold mb-6">Want to join the discussion? Log in to share your thoughts.</p>
+                  <div className="flex justify-center gap-4">
+                    <button 
+                      onClick={() => navigate('/login')}
+                      className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-bold text-xs shadow-xl shadow-blue-100"
+                    >
+                      Login
+                    </button>
+                    <button 
+                      onClick={() => navigate('/register')}
+                      className="px-8 py-3 bg-white text-slate-900 border border-slate-200 rounded-2xl font-bold text-xs shadow-sm"
+                    >
+                      Register
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 relative">
-                  <textarea 
-                    placeholder="Share your curiosity or ask a question..."
-                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 outline-none transition-all resize-none h-24"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                  <button 
-                    type="submit"
-                    className="absolute bottom-3 right-3 bg-blue-600 text-white px-6 py-2 rounded-xl text-xs font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all opacity-0 group-focus-within:opacity-100 translate-y-2 group-focus-within:translate-y-0"
-                  >
-                    Post Curiosity
-                  </button>
-                </div>
-              </form>
+              )}
 
               {/* Comments List */}
               <div className="pt-8">
