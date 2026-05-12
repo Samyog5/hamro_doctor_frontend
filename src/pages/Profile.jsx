@@ -10,6 +10,11 @@ const Profile = ({ onUpdateUser }) => {
   const [photoLoading, setPhotoLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   
+  const [availableHospitals, setAvailableHospitals] = useState([]);
+  const [myHospitals, setMyHospitals] = useState([]);
+  const [selectedHospital, setSelectedHospital] = useState('');
+  const [linkLoading, setLinkLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -32,12 +37,65 @@ const Profile = ({ onUpdateUser }) => {
     }
   });
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
   const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
 
   useEffect(() => {
     fetchProfile();
+    if (user?.role === 'doctor') {
+      fetchHospitals();
+    }
   }, []);
+
+  const fetchHospitals = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // Fetch available hospitals to select from
+      const availRes = await fetch(`${apiUrl}/api/${apiVersion}/users/hospitals`);
+      const availData = await availRes.json();
+      if (availData.success) {
+        setAvailableHospitals(availData.hospitals);
+      }
+
+      // Fetch my linked/requested hospitals
+      const myRes = await fetch(`${apiUrl}/api/${apiVersion}/users/my-hospitals`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const myData = await myRes.json();
+      if (myData.success) {
+        setMyHospitals(myData.hospitals);
+      }
+    } catch (error) {
+      console.error('Error fetching hospitals:', error);
+    }
+  };
+
+  const handleLinkHospital = async () => {
+    if (!selectedHospital) return;
+    setLinkLoading(true);
+    try {
+      const response = await fetch(`${apiUrl}/api/${apiVersion}/users/link-hospital`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ hospitalId: selectedHospital })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setMessage({ type: 'success', text: data.message });
+        setSelectedHospital('');
+        fetchHospitals(); // Refresh the list
+      } else {
+        setMessage({ type: 'error', text: data.message });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Network error requesting link' });
+    } finally {
+      setLinkLoading(false);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -191,14 +249,14 @@ const Profile = ({ onUpdateUser }) => {
 
   if (loading) {
     return (
-      <main className="flex-1 lg:ml-[280px] min-h-screen bg-slate-50 flex items-center justify-center">
+      <main className="flex-1 min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
       </main>
     );
   }
 
   return (
-    <main className="flex-1 lg:ml-[280px] min-h-screen bg-slate-50 font-['Poppins'] py-8 px-4 lg:px-8">
+    <main className="flex-1 min-h-screen bg-slate-50 font-['Poppins'] py-8 px-4 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
@@ -337,6 +395,75 @@ const Profile = ({ onUpdateUser }) => {
                     </div>
                   </div>
                 )}
+                
+                {/* Hospital Link Section */}
+                {user.role === 'doctor' && (
+                  <div className="lg:col-span-2 space-y-6 mt-4">
+                    <h3 className="text-lg font-black text-slate-900 border-b border-slate-50 pb-2">Institutional Affiliation</h3>
+                    <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl flex flex-col md:flex-row gap-4 items-center">
+                      <div className="flex-1">
+                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Link with a Registered Hospital</label>
+                        <select 
+                          className="w-full px-5 py-3.5 bg-white border border-blue-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-100 transition-all cursor-pointer"
+                          value={selectedHospital}
+                          onChange={(e) => setSelectedHospital(e.target.value)}
+                        >
+                          <option value="">-- Select a Hospital --</option>
+                          {availableHospitals.map(h => (
+                            <option key={h._id} value={h._id}>{h.name}</option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-slate-500 mt-2">Send a request to join a hospital. Once they approve, you'll be officially linked to their institution.</p>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={handleLinkHospital}
+                        disabled={!selectedHospital || linkLoading}
+                        className="px-6 py-3.5 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 whitespace-nowrap"
+                      >
+                        {linkLoading ? 'Requesting...' : 'Request Link'}
+                      </button>
+                    </div>
+                    {/* Inline message for link requests so it's visible without scrolling up */}
+                    {message.text && message.text.includes('hospital') && (
+                      <div className={`p-4 rounded-xl text-sm font-bold animate-in fade-in slide-in-from-top-2 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
+                        {message.text}
+                      </div>
+                    )}
+
+                    {/* Display Linked/Requested Hospitals */}
+                    {myHospitals.length > 0 && (
+                      <div className="mt-8">
+                        <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">My Hospitals</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {myHospitals.map(h => (
+                            <div key={h._id} className="p-5 bg-white border border-slate-100 shadow-sm rounded-2xl flex flex-col gap-3 group hover:border-blue-100 transition-all">
+                              <div>
+                                <h5 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{h.name}</h5>
+                                <p className="text-xs font-medium text-slate-500 mt-0.5">{h.address || 'Address not provided'}</p>
+                              </div>
+                              <div className="mt-auto pt-3 border-t border-slate-50 flex items-center justify-between">
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                  h.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 
+                                  h.status === 'rejected' ? 'bg-red-50 text-red-600' : 
+                                  'bg-amber-50 text-amber-600'
+                                }`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${
+                                    h.status === 'approved' ? 'bg-emerald-500' : 
+                                    h.status === 'rejected' ? 'bg-red-500' : 
+                                    'bg-amber-500 animate-pulse'
+                                  }`}></span>
+                                  {h.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </div>
 
               {isEditing && (

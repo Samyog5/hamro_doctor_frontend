@@ -18,7 +18,7 @@ function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       const response = await fetch(`${apiUrl}/api/${apiVersion}/auth/login`, {
         method: 'POST',
@@ -172,6 +172,10 @@ function Login({ onLogin }) {
 
             <div className="text-center mt-8 text-sm text-slate-500 font-medium">
               Don't have an account? <button type="button" onClick={() => navigate('/register')} className="text-[#1E88E5] font-bold hover:underline ml-1">Create account</button>
+            </div>
+
+            <div className="text-center mt-4 text-xs font-bold uppercase tracking-widest text-slate-400">
+              Are you a medical institution? <button type="button" onClick={() => navigate('/register-hospital')} className="text-blue-600 hover:underline ml-1">Register as Hospital</button>
             </div>
 
 

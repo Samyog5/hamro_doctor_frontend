@@ -16,7 +16,7 @@ const Articles = ({ isPublic }) => {
 
   const fetchArticles = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       const response = await fetch(`${apiUrl}/api/${apiVersion}/articles`);
       const data = await response.json();
@@ -50,7 +50,7 @@ const Articles = ({ isPublic }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       const tagsArray = newArticle.tags.split(',').map(t => t.trim());
       
@@ -125,7 +125,7 @@ const Articles = ({ isPublic }) => {
                 <div className="aspect-[16/9] bg-slate-100 relative overflow-hidden">
                   {article.featureImage ? (
                     <img 
-                      src={article.featureImage.startsWith('http') || article.featureImage.startsWith('data:') ? article.featureImage : `${import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001'}${article.featureImage}`} 
+                      src={article.featureImage.startsWith('http') || article.featureImage.startsWith('data:') ? article.featureImage : `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${article.featureImage}`} 
                       alt={article.title} 
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                     />
@@ -149,7 +149,7 @@ const Articles = ({ isPublic }) => {
                     <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-xs font-black overflow-hidden">
                       {article.author?.profile?.avatar ? (
                         <img 
-                          src={article.author.profile.avatar.startsWith('http') || article.author.profile.avatar.startsWith('data:') ? article.author.profile.avatar : `${import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001'}${article.author.profile.avatar}`} 
+                          src={article.author.profile.avatar.startsWith('http') || article.author.profile.avatar.startsWith('data:') ? article.author.profile.avatar : `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${article.author.profile.avatar}`} 
                           alt="Author" 
                           className="w-full h-full object-cover" 
                         />

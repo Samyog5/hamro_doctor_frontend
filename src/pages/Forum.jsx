@@ -15,7 +15,7 @@ const Forum = () => {
 
   const fetchPosts = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       const response = await fetch(`${apiUrl}/api/${apiVersion}/forum/questions`);
       const data = await response.json();
@@ -33,7 +33,7 @@ const Forum = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       const response = await fetch(`${apiUrl}/api/${apiVersion}/forum/questions`, {
         method: 'POST',
@@ -59,7 +59,7 @@ const Forum = () => {
     if (!replyContent.trim()) return;
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       const response = await fetch(`${apiUrl}/api/${apiVersion}/forum/questions/${postId}/answer`, {
         method: 'POST',

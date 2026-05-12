@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import HospitalRegister from './pages/HospitalRegister'
+import AdminDashboard from './pages/AdminDashboard'
+import AdminOnboard from './pages/AdminOnboard'
 import Dashboard from './pages/Dashboard'
 import Consultations from './pages/Consultations'
 import Calls from './pages/Calls'
@@ -16,6 +19,8 @@ import Profile from './pages/Profile'
 import ArticleDetail from './pages/ArticleDetail'
 import DoctorDashboard from './pages/DoctorDashboard'
 import DoctorOnboarding from './pages/DoctorOnboarding'
+import HospitalDashboard from './pages/HospitalDashboard'
+import HospitalOnboard from './pages/HospitalOnboard'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 
@@ -36,7 +41,7 @@ function App() {
       // Background refresh of user data to ensure profile/avatar is up to date
       const refreshUser = async () => {
         try {
-          const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
           const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
           const response = await fetch(`${apiUrl}/api/${apiVersion}/auth/me`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -92,6 +97,10 @@ function App() {
           path="/register" 
           element={!isAuthenticated ? <Register onLogin={handleLogin} /> : <Navigate to={user?.role === 'doctor' ? "/doctor-dashboard" : "/dashboard"} />} 
         />
+        <Route 
+          path="/register-hospital" 
+          element={!isAuthenticated ? <HospitalRegister onLogin={handleLogin} /> : <Navigate to={user?.role === 'doctor' ? "/doctor-dashboard" : "/dashboard"} />} 
+        />
 
         {/* 
             DYNAMIC ROUTING FOR ARTICLES
@@ -122,6 +131,10 @@ function App() {
           <Route path="/messages/:id?" element={<Messages />} />
           <Route path="/profile" element={<Profile onUpdateUser={handleUpdateUser} />} />
           <Route path="/doctor-dashboard" element={<DoctorDashboard onLogout={handleLogout} />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/onboard" element={<AdminOnboard />} />
+          <Route path="/hospital-dashboard" element={<HospitalDashboard />} />
+          <Route path="/hospital/onboard" element={<HospitalOnboard />} />
         </Route>
 
         <Route path="/doctor-onboarding" element={<DoctorOnboarding onLogout={handleLogout} />} />

@@ -12,6 +12,7 @@ function Register({ onLogin }) {
     name: '',
     email: '',
     phone: '',
+    address: '',
     password: '',
     confirmPassword: '',
     role: 'patient',
@@ -80,7 +81,7 @@ function Register({ onLogin }) {
     setLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       const response = await fetch(`${apiUrl}/api/${apiVersion}/auth/register`, {
         method: 'POST',
@@ -94,6 +95,7 @@ function Register({ onLogin }) {
           phone: formData.phone,
           password: formData.password,
           role: formData.role,
+          address: formData.address || undefined,
         }),
       });
 
@@ -126,7 +128,7 @@ function Register({ onLogin }) {
     setLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       const response = await fetch(`${apiUrl}/api/${apiVersion}/auth/verify-otp`, {
         method: 'POST',
@@ -178,7 +180,7 @@ function Register({ onLogin }) {
     setLoading(true);
     setError('');
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       await fetch(`${apiUrl}/api/${apiVersion}/auth/register`, {
         method: 'POST',
@@ -190,6 +192,7 @@ function Register({ onLogin }) {
           phone: formData.phone,
           password: formData.password,
           role: formData.role,
+          address: formData.address || undefined,
         }),
       });
       const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
@@ -207,7 +210,7 @@ function Register({ onLogin }) {
     setError('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://192.168.110.29:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
       
       const payload = {
@@ -432,6 +435,23 @@ function Register({ onLogin }) {
                       )}
                     </button>
                   </div>
+                </div>
+
+                {/* Address - full width */}
+                <div className="relative flex items-center group">
+                  <div className="absolute left-4 z-10 pointer-events-none transition-colors">
+                    <svg className="text-blue-500 group-focus-within:text-blue-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Your Address (City, District)"
+                    className="w-full pl-12 pr-4 py-3.5 bg-white border-[1.5px] border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none transition-all text-sm text-slate-700 placeholder:text-slate-400 font-medium"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
                 </div>
 
                 <button 
