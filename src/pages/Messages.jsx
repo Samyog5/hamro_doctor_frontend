@@ -14,7 +14,7 @@ const Messages = () => {
   const [loading, setLoading] = useState(true);
   const [chatLoading, setChatLoading] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
-  
+
   // Call States
   const [calling, setCalling] = useState(false);
   const [receivingCall, setReceivingCall] = useState(false);
@@ -28,6 +28,7 @@ const Messages = () => {
   const [callType, setCallType] = useState('audio');
   const [callTimer, setCallTimer] = useState(0);
   const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [remoteVideoPortrait, setRemoteVideoPortrait] = useState(false);
 
   // Prescription states
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -38,7 +39,7 @@ const Messages = () => {
   const [prescriptionSubmitting, setPrescriptionSubmitting] = useState(false);
   const [prescriptionSuccess, setPrescriptionSuccess] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  
+
   const timerRef = useRef(null);
   const socketRef = useRef();
   const messagesEndRef = useRef(null);
@@ -73,7 +74,7 @@ const Messages = () => {
           // Filter only active consultations for the messenger view
           const activeCons = data.consultations.filter(c => c.status === 'active');
           setConversations(activeCons);
-          
+
           // Select chat based on URL ID or first available
           if (urlChatId) {
             const targetChat = activeCons.find(c => c._id === urlChatId);
@@ -95,7 +96,7 @@ const Messages = () => {
 
     fetchConversations();
     socketRef.current = io(apiUrl);
-    
+
     socketRef.current.on('connect', () => {
       setSocketConnected(true);
       if (selectedChat) {
@@ -112,7 +113,7 @@ const Messages = () => {
   const handleSelectChat = async (consultation) => {
     setChatLoading(true);
     setSelectedChat(consultation);
-    
+
     // Join the socket room for this consultation
     if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('join_consultation', consultation._id);
@@ -148,10 +149,10 @@ const Messages = () => {
           setMessages((prev) => [...prev, message]);
         }
       }
-      
+
       // Update the last message in the conversation list
-      setConversations(prev => prev.map(c => 
-        c._id === message.consultationId 
+      setConversations(prev => prev.map(c =>
+        c._id === message.consultationId
           ? { ...c, lastMessage: message.text, lastMessageTime: message.timestamp }
           : c
       ));
@@ -201,37 +202,63 @@ const Messages = () => {
 
   const startCall = async (type) => {
     if (!selectedChat) return;
+
     try {
-      // Record session in backend BEFORE starting peer (stabilize state)
       await recordCallSession(type);
-      
+
       setCallType(type);
-      const constraints = { 
-        audio: true, 
-        video: type === 'video' ? { width: 1280, height: 720 } : false 
+
+      const constraints = {
+        audio: true,
+        video:
+          type === 'video'
+            ? {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              frameRate: { ideal: 30 },
+              facingMode: 'user'
+            }
+            : false
       };
-      
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(
+        constraints
+      );
+
       setLocalStream(mediaStream);
       streamRef.current = mediaStream;
+
       setCalling(true);
-      setCallStatus(type === 'video' ? 'Starting Video Call...' : 'Calling...');
+
+      setCallStatus(
+        type === 'video'
+          ? 'Starting Video Call...'
+          : 'Calling...'
+      );
 
       const peer = new Peer({
         initiator: true,
         trickle: true,
-        stream: mediaStream,
-        config: { 
+        config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' }
-          ] 
+          ],
+          sdpSemantics: 'unified-plan'
         }
       });
 
+      mediaStream.getTracks().forEach(track => {
+        peer.addTrack(track, mediaStream);
+      });
+
       peer.on('signal', (data) => {
-        console.log("📤 SIGNAL OUT:", data.type || (data.candidate ? 'candidate' : 'sdp'));
+        console.log(
+          '📤 SIGNAL OUT:',
+          data.type || (data.candidate ? 'candidate' : 'sdp')
+        );
+
         socketRef.current.emit('call_signal', {
           consultationId: selectedChat._id,
           type: data.candidate ? 'candidate' : 'offer',
@@ -242,59 +269,126 @@ const Messages = () => {
       });
 
       peer.on('track', (track, incomingStream) => {
-        console.log("TRACK RECEIVED");
+        console.log(
+          '🎥 TRACK RECEIVED:',
+          track.kind,
+          incomingStream
+        );
+        
+        if (!incomingStream) return;
 
-        const finalStream = incomingStream || new MediaStream([track]);
+        if (track.kind === 'video') {
+          const trackSettings = incomingStream.getVideoTracks()?.[0]?.getSettings();
+          if (trackSettings) {
+            console.log('REMOTE VIDEO DIMENSIONS:', trackSettings.width, trackSettings.height);
+            setRemoteVideoPortrait(trackSettings.height > trackSettings.width);
+          }
+        }
 
-        remoteStreamRef.current = finalStream;
-        setRemoteStream(finalStream);
+        remoteStreamRef.current = incomingStream;
+        setRemoteStream(incomingStream);
 
-        if (remoteVideoRef.current) {
-          console.log("IMMEDIATE ATTACH");
-          remoteVideoRef.current.srcObject = finalStream;
+        if (
+          type === 'video' &&
+          remoteVideoRef.current
+        ) {
+          const videoEl = remoteVideoRef.current;
+          videoEl.srcObject = incomingStream;
+
+          videoEl.onloadedmetadata = async () => {
+            try {
+              await videoEl.play();
+              console.log('✅ Remote video playing after metadata');
+            } catch (err) {
+              console.log('PLAY ERROR:', err);
+            }
+          };
+        }
+
+        if (
+          type === 'audio' &&
+          remoteAudioRef.current
+        ) {
+          remoteAudioRef.current.srcObject =
+            incomingStream;
         }
       });
 
-      peer.on('connect', () => console.log("✅ PEER CONNECTED"));
-      peer.on('error', err => console.log("🔥 PEER ERROR:", err));
+      peer.on('connect', () => {
+        console.log('✅ PEER CONNECTED');
+      });
+
+      peer.on('error', (err) => {
+        console.log('🔥 PEER ERROR:', err);
+      });
+
+      peer._pc.oniceconnectionstatechange = () => {
+        console.log(
+          '🧊 ICE STATE:',
+          peer._pc.iceConnectionState
+        );
+      };
 
       connectionRef.current = peer;
     } catch (err) {
       console.error('Error accessing devices:', err);
+
       alert('Could not access microphone/camera.');
     }
   };
 
   const answerCall = async () => {
     if (!selectedChat) return;
+
     try {
-      const constraints = { 
-        audio: true, 
-        video: callType === 'video' ? { width: 1280, height: 720 } : false 
+      const constraints = {
+        audio: true,
+        video:
+          callType === 'video'
+            ? {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              frameRate: { ideal: 30 },
+              facingMode: 'user'
+            }
+            : false
       };
-      
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      const mediaStream =
+        await navigator.mediaDevices.getUserMedia(
+          constraints
+        );
+
       setLocalStream(mediaStream);
+
       streamRef.current = mediaStream;
 
       const peer = new Peer({
         initiator: false,
         trickle: true,
-        stream: mediaStream,
-        config: { 
+        config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' }
-          ] 
+          ],
+          sdpSemantics: 'unified-plan'
         }
+      });
+
+      mediaStream.getTracks().forEach(track => {
+        peer.addTrack(track, mediaStream);
       });
 
       setCallAccepted(true);
       setReceivingCall(false);
 
       peer.on('signal', (data) => {
-        console.log("📤 SIGNAL OUT:", data.type || (data.candidate ? 'candidate' : 'sdp'));
+        console.log(
+          '📤 SIGNAL OUT:',
+          data.type || (data.candidate ? 'candidate' : 'sdp')
+        );
+
         socketRef.current.emit('call_signal', {
           consultationId: selectedChat._id,
           type: data.candidate ? 'candidate' : 'answer',
@@ -304,40 +398,81 @@ const Messages = () => {
       });
 
       peer.on('track', (track, incomingStream) => {
-        console.log("TRACK RECEIVED");
+        console.log(
+          '🎥 TRACK RECEIVED:',
+          track.kind,
+          incomingStream
+        );
 
-        const finalStream = incomingStream || new MediaStream([track]);
+        if (!incomingStream) return;
 
-        remoteStreamRef.current = finalStream;
-        setRemoteStream(finalStream);
+        if (track.kind === 'video') {
+          const trackSettings = incomingStream.getVideoTracks()?.[0]?.getSettings();
+          if (trackSettings) {
+            console.log('REMOTE VIDEO DIMENSIONS:', trackSettings.width, trackSettings.height);
+            setRemoteVideoPortrait(trackSettings.height > trackSettings.width);
+          }
+        }
 
-        if (remoteVideoRef.current) {
-          console.log("IMMEDIATE ATTACH");
-          remoteVideoRef.current.srcObject = finalStream;
+        remoteStreamRef.current = incomingStream;
+        setRemoteStream(incomingStream);
+
+        if (
+          callType === 'video' &&
+          remoteVideoRef.current
+        ) {
+          const videoEl = remoteVideoRef.current;
+          videoEl.srcObject = incomingStream;
+
+          videoEl.onloadedmetadata = async () => {
+            try {
+              await videoEl.play();
+              console.log('✅ Remote video playing after metadata');
+            } catch (err) {
+              console.log('PLAY ERROR:', err);
+            }
+          };
+        }
+
+        if (
+          callType === 'audio' &&
+          remoteAudioRef.current
+        ) {
+          remoteAudioRef.current.srcObject =
+            incomingStream;
         }
       });
 
-      peer.on('connect', () => console.log("✅ PEER CONNECTED"));
-      peer.on('error', err => console.log("🔥 PEER ERROR:", err));
+      peer.on('connect', () => {
+        console.log('✅ PEER CONNECTED');
+      });
+
+      peer.on('error', (err) => {
+        console.log('🔥 PEER ERROR:', err);
+      });
 
       peer.signal(callerSignal);
+
       connectionRef.current = peer;
 
-      // Process any signals that arrived before we answered
       if (pendingSignals.current.length > 0) {
-        console.log(`Processing ${pendingSignals.current.length} queued signals...`);
-        pendingSignals.current.forEach(sig => peer.signal(sig));
+        console.log(
+          `Processing ${pendingSignals.current.length} queued signals...`
+        );
+
+        pendingSignals.current.forEach(sig =>
+          peer.signal(sig)
+        );
+
         pendingSignals.current = [];
       }
 
-      // Monitor ICE state
       peer._pc.oniceconnectionstatechange = () => {
-        console.log("🧊 ICE STATE:", peer._pc.iceConnectionState);
-        if (peer._pc.iceConnectionState === 'failed') {
-          console.error("WebRTC Connection Failed. Check firewall or network isolation.");
-        }
+        console.log(
+          '🧊 ICE STATE:',
+          peer._pc.iceConnectionState
+        );
       };
-
     } catch (err) {
       console.error('Error answering call:', err);
     }
@@ -383,8 +518,9 @@ const Messages = () => {
     setCallAccepted(false);
     setCallStatus('');
     setCallTimer(0);
+    setRemoteVideoPortrait(false);
     clearInterval(timerRef.current);
-    
+
     if (currentSessionId) {
       finalizeCallSession();
     }
@@ -395,7 +531,7 @@ const Messages = () => {
     }
     setLocalStream(null);
     if (connectionRef.current) {
-      try { connectionRef.current.destroy(); } catch(e) {}
+      try { connectionRef.current.destroy(); } catch (e) { }
       connectionRef.current = null;
     }
     setRemoteStream(null);
@@ -436,33 +572,7 @@ const Messages = () => {
     }
   }, [localStream, calling, callAccepted]);
 
-  useEffect(() => {
-    if (remoteStream && remoteVideoRef.current) {
-      console.log("Attaching remote stream via useEffect");
-      remoteVideoRef.current.srcObject = remoteStream;
-    }
-  }, [remoteStream, callAccepted]);
-
   // Force attach when ref becomes ready (retry interval)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (remoteStreamRef.current) {
-        if (callType === 'video' && remoteVideoRef.current) {
-          if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
-            console.log("FORCING ATTACH (Video retry)");
-            remoteVideoRef.current.srcObject = remoteStreamRef.current;
-          }
-        } else if (callType === 'audio' && remoteAudioRef.current) {
-          if (remoteAudioRef.current.srcObject !== remoteStreamRef.current) {
-            console.log("FORCING ATTACH (Audio retry)");
-            remoteAudioRef.current.srcObject = remoteStreamRef.current;
-          }
-        }
-      }
-    }, 300);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const MAX_CALL_SECONDS = 15 * 60;
 
@@ -539,14 +649,14 @@ const Messages = () => {
   const handleCompleteConsultation = async () => {
     if (!selectedChat) return;
     if (!window.confirm('Are you sure you want to finish this consultation? This will close the session.')) return;
-    
+
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${apiUrl}/api/${apiVersion}/consultations/${selectedChat._id}/complete`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (res.ok) {
         setSelectedChat(prev => ({ ...prev, status: 'completed' }));
         setConversations(prev => prev.filter(c => c._id !== selectedChat._id));
@@ -569,19 +679,19 @@ const Messages = () => {
     };
 
     socketRef.current.emit('send_message', messageData);
-    
+
     // Optimistic UI update for the chat window
     setMessages(prev => [...prev, {
       ...messageData,
       sender: user._id, // Add sender for immediate styling
-      isOptimistic: true 
+      isOptimistic: true
     }]);
 
     setNewMessage('');
-    
+
     // Optimistic UI update for the conversation list
-    setConversations(prev => prev.map(c => 
-      c._id === selectedChat._id 
+    setConversations(prev => prev.map(c =>
+      c._id === selectedChat._id
         ? { ...c, lastMessage: newMessage, lastMessageTime: new Date() }
         : c
     ));
@@ -608,9 +718,9 @@ const Messages = () => {
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input 
-              type="text" 
-              placeholder="Search conversations..." 
+            <input
+              type="text"
+              placeholder="Search conversations..."
               className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
             />
           </div>
@@ -624,8 +734,8 @@ const Messages = () => {
               const other = isDoctor ? con.patient : con.doctor;
               const isActive = selectedChat?._id === con._id;
               return (
-                <div 
-                  key={con._id} 
+                <div
+                  key={con._id}
                   onClick={() => handleSelectChat(con)}
                   className={`px-4 py-4 cursor-pointer transition-all flex items-center gap-4 border-b border-slate-50/50 ${isActive ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
                 >
@@ -664,7 +774,7 @@ const Messages = () => {
             {/* Chat Header */}
             <header className="px-4 lg:px-8 py-4 bg-white border-b border-slate-100 flex items-center justify-between shadow-sm z-10 flex-shrink-0">
               <div className="flex items-center gap-3 lg:gap-4">
-                <button 
+                <button
                   onClick={() => setSelectedChat(null)}
                   className="lg:hidden p-2 text-slate-400 hover:bg-slate-50 rounded-xl"
                 >
@@ -674,10 +784,10 @@ const Messages = () => {
                 </button>
                 <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-blue-100 overflow-hidden">
                   {(isDoctor ? selectedChat.patient : selectedChat.doctor)?.profile?.avatar ? (
-                    <img 
-                      src={(isDoctor ? selectedChat.patient : selectedChat.doctor).profile.avatar} 
-                      alt="Avatar" 
-                      className="w-full h-full object-cover" 
+                    <img
+                      src={(isDoctor ? selectedChat.patient : selectedChat.doctor).profile.avatar}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     (isDoctor ? selectedChat.patient?.name : selectedChat.doctor?.name)?.charAt(0)
@@ -696,8 +806,8 @@ const Messages = () => {
               <div className="flex items-center gap-2">
                 {!calling && !callAccepted && !receivingCall && (
                   <div className="flex gap-2">
-                    <button 
-                      className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all border border-blue-100" 
+                    <button
+                      className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all border border-blue-100"
                       onClick={() => startCall('audio')}
                       title="Audio Call"
                     >
@@ -705,13 +815,13 @@ const Messages = () => {
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                       </svg>
                     </button>
-                    <button 
-                      className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all border border-blue-100" 
+                    <button
+                      className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all border border-blue-100"
                       onClick={() => startCall('video')}
                       title="Video Call"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        <polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                       </svg>
                     </button>
                   </div>
@@ -723,11 +833,11 @@ const Messages = () => {
                     <button className="ml-2 text-white/60 hover:text-white" onClick={endCall}>✕</button>
                   </div>
                 )}
-                
+
                 {/* More Options Dropdown */}
                 {isDoctor && !calling && !callAccepted && (
                   <div className="relative">
-                    <button 
+                    <button
                       className={`p-2.5 rounded-xl transition-all ${showMoreMenu ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
                       onClick={() => setShowMoreMenu(!showMoreMenu)}
                     >
@@ -738,22 +848,22 @@ const Messages = () => {
 
                     {showMoreMenu && (
                       <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[60] animate-in fade-in slide-in-from-top-2 duration-200">
-                        <button 
+                        <button
                           className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
                           onClick={() => { setShowPrescriptionModal(true); setShowMoreMenu(false); }}
                         >
                           <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>
                           </span>
                           Issue Prescription
                         </button>
                         {selectedChat.status === 'active' && (
-                          <button 
+                          <button
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors border-t border-slate-50"
                             onClick={() => { handleCompleteConsultation(); setShowMoreMenu(false); }}
                           >
                             <span className="p-1.5 bg-red-50 text-red-600 rounded-lg">
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="9" y1="9" x2="15" y2="15" /><line x1="15" y1="9" x2="9" y2="15" /></svg>
                             </span>
                             Finish Consultation
                           </button>
@@ -802,15 +912,15 @@ const Messages = () => {
                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                   </svg>
                 </button>
-                <input 
-                  type="text" 
-                  placeholder="Aa" 
+                <input
+                  type="text"
+                  placeholder="Aa"
                   className="flex-1 bg-transparent border-none outline-none text-sm py-2 font-medium"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={!newMessage.trim()}
                   className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${newMessage.trim() ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                 >
@@ -837,67 +947,70 @@ const Messages = () => {
 
 
       {/* Call Overlay - Always Rendered but hidden if not in call */}
-      <div 
+      <div
         className="absolute inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300"
         style={{ display: (calling || callAccepted) ? "flex" : "none" }}
       >
-          {callType === 'video' ? (
-            <>
-              {/* Remote Video Display */}
-              <video 
+        {callType === 'video' ? (
+          <>
+            {/* Remote Video Container - Professional Aspect Ratio Handling */}
+            <div className={`relative flex items-center justify-center overflow-hidden bg-black transition-all duration-500 w-full h-full ${remoteVideoPortrait ? 'md:max-w-[450px] md:mx-auto shadow-2xl border-x border-white/5' : ''}`}>
+              <video
                 ref={remoteVideoRef}
-                autoPlay 
-                playsInline 
-                onLoadedMetadata={(e) => e.target.play()}
-                className={`w-full h-full object-cover transition-opacity duration-500 ${remoteStream ? 'opacity-100' : 'opacity-0'}`} 
+                autoPlay
+                playsInline
+                className={`w-full h-full object-contain bg-black transition-opacity duration-500 ${remoteStream ? 'opacity-100' : 'opacity-0'}`}
               />
-              
+
               {!remoteStream && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10">
                   <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-3xl font-bold text-white animate-pulse mb-4">
                     {otherParty?.name?.charAt(0)}
                   </div>
                   <p className="text-white font-bold tracking-wider animate-pulse">{callStatus || 'Connecting Video...'}</p>
                 </div>
               )}
-              <div className="absolute top-6 right-6 w-32 h-48 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl z-50 bg-slate-800">
-                <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
-              </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center">
-              <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-bold text-white shadow-2xl mb-8 relative">
-                <div className="absolute inset-0 rounded-full border-4 border-blue-500 animate-ping opacity-25"></div>
-                {otherParty?.name?.charAt(0)}
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">{isDoctor ? otherParty?.name : `Dr. ${otherParty?.name}`}</h2>
-              <p className="text-blue-400 font-bold tracking-widest uppercase text-xs mb-8">{callAccepted ? formatTimer(callTimer) : (callStatus || 'Calling...')}</p>
-              <audio ref={remoteAudioRef} autoPlay />
             </div>
-          )}
-          
-          <div className="absolute bottom-12 flex items-center gap-6 px-8 py-4 bg-white/10 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl">
-              <button className={`w-14 h-14 flex items-center justify-center rounded-full transition-all ${isMuted ? 'bg-red-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`} onClick={toggleMute}>
-                {isMuted ? (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                )}
-              </button>
-              {callType === 'video' && (
-                <button className={`w-14 h-14 flex items-center justify-center rounded-full transition-all ${isVideoOff ? 'bg-red-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`} onClick={toggleVideo}>
-                  {isVideoOff ? (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34M23 7l-7 5 7 5M1 1l22 22"/></svg>
-                  ) : (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                  )}
-                </button>
-              )}
-              <button className="w-16 h-16 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 shadow-xl" onClick={endCall}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{transform: 'rotate(135deg)', transformOrigin: 'center'}}><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" /></svg>
-              </button>
+
+            {/* Local Self-Preview - Uses object-cover for mirror effect */}
+            <div className="absolute top-6 right-6 w-32 h-48 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl z-50 bg-slate-800">
+              <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center">
+            <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-bold text-white shadow-2xl mb-8 relative">
+              <div className="absolute inset-0 rounded-full border-4 border-blue-500 animate-ping opacity-25"></div>
+              {otherParty?.name?.charAt(0)}
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">{isDoctor ? otherParty?.name : `Dr. ${otherParty?.name}`}</h2>
+            <p className="text-blue-400 font-bold tracking-widest uppercase text-xs mb-8">{callAccepted ? formatTimer(callTimer) : (callStatus || 'Calling...')}</p>
+            <audio ref={remoteAudioRef} autoPlay />
           </div>
-         </div>
+        )}
+
+        <div className="absolute bottom-12 flex items-center gap-6 px-8 py-4 bg-white/10 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl">
+          <button className={`w-14 h-14 flex items-center justify-center rounded-full transition-all ${isMuted ? 'bg-red-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`} onClick={toggleMute}>
+            {isMuted ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
+            )}
+          </button>
+          {callType === 'video' && (
+            <button className={`w-14 h-14 flex items-center justify-center rounded-full transition-all ${isVideoOff ? 'bg-red-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`} onClick={toggleVideo}>
+              {isVideoOff ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34M23 7l-7 5 7 5M1 1l22 22" /></svg>
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
+              )}
+            </button>
+          )}
+          <button className="w-16 h-16 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 shadow-xl" onClick={endCall}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ transform: 'rotate(135deg)', transformOrigin: 'center' }}><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" /></svg>
+          </button>
+        </div>
+      </div>
 
       {/* Incoming Call Modal */}
       {receivingCall && (
@@ -926,26 +1039,26 @@ const Messages = () => {
               <div className="p-12 text-center text-emerald-600 font-bold">Prescription Sent Successfully!</div>
             ) : (
               <form className="p-6 overflow-y-auto flex flex-col gap-6" onSubmit={handleSubmitPrescription}>
-                 <textarea className="w-full bg-slate-50 border rounded-xl p-4 text-sm" placeholder="Diagnosis..." value={prescriptionForm.diagnosis} onChange={(e) => setPrescriptionForm({...prescriptionForm, diagnosis: e.target.value})} required rows={2} />
-                 {prescriptionMedicines.map((med, i) => (
-                   <div key={i} className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl">
-                      <input className="flex-1 bg-white border rounded-lg px-2 py-1.5 text-xs" placeholder="Medicine Name" value={med.name} onChange={(e) => handleMedicineChange(i, 'name', e.target.value)} required />
-                      <button type="button" onClick={() => handleRemoveMedicine(i)}>✕</button>
-                   </div>
-                 ))}
-                 <button type="button" className="text-blue-600 text-xs font-bold" onClick={handleAddMedicine}>+ Add More</button>
-                 <button type="submit" className="w-full bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg" disabled={prescriptionSubmitting}>Send Prescription</button>
+                <textarea className="w-full bg-slate-50 border rounded-xl p-4 text-sm" placeholder="Diagnosis..." value={prescriptionForm.diagnosis} onChange={(e) => setPrescriptionForm({ ...prescriptionForm, diagnosis: e.target.value })} required rows={2} />
+                {prescriptionMedicines.map((med, i) => (
+                  <div key={i} className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl">
+                    <input className="flex-1 bg-white border rounded-lg px-2 py-1.5 text-xs" placeholder="Medicine Name" value={med.name} onChange={(e) => handleMedicineChange(i, 'name', e.target.value)} required />
+                    <button type="button" onClick={() => handleRemoveMedicine(i)}>✕</button>
+                  </div>
+                ))}
+                <button type="button" className="text-blue-600 text-xs font-bold" onClick={handleAddMedicine}>+ Add More</button>
+                <button type="submit" className="w-full bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg" disabled={prescriptionSubmitting}>Send Prescription</button>
               </form>
             )}
           </div>
         </div>
       )}
 
-      <audio 
-        ref={remoteAudioRef} 
-        autoPlay 
-        style={{ display: (!callAccepted || callType !== 'video') ? "block" : "none" }} 
-        className="hidden" 
+      <audio
+        ref={remoteAudioRef}
+        autoPlay
+        style={{ display: (!callAccepted || callType !== 'video') ? "block" : "none" }}
+        className="hidden"
       />
     </main>
   );

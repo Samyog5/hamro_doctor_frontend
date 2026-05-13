@@ -12,10 +12,13 @@ const Chat = () => {
   const [callerSignal, setCallerSignal] = useState(null);
 
   const [stream, setStream] = useState(null);
-  const [remoteStream, setRemoteStream] = useState(null);
+
+  const socketRef = useRef();
+  const connectionRef = useRef();
 
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
+
   const remoteStreamRef = useRef(null);
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
@@ -23,12 +26,14 @@ const Chat = () => {
   // ---------------- SOCKET ----------------
   useEffect(() => {
     socketRef.current = io(apiUrl);
+
     socketRef.current.on('connect', () => {
+      console.log('Socket connected');
       socketRef.current.emit('join_consultation', id);
     });
 
     socketRef.current.on('call_signal', (data) => {
-      console.log("📥 SOCKET RECEIVED:", data.type, data);
+      console.log('📥 SOCKET RECEIVED:', data.type);
 
       if (data.type === 'offer') {
         setReceivingCall(true);
@@ -37,11 +42,7 @@ const Chat = () => {
 
       if (data.type === 'answer') {
         setCallAccepted(true);
-
-        // ensure DOM ready before applying signal
-        setTimeout(() => {
-          connectionRef.current?.signal(data.signal);
-        }, 0);
+        connectionRef.current?.signal(data.signal);
       }
 
       if (data.type === 'candidate') {
@@ -49,229 +50,215 @@ const Chat = () => {
       }
     });
 
-    return () => socketRef.current.disconnect();
-
+    return () => {
+      socketRef.current?.disconnect();
+    };
   }, [id]);
 
-  // ---------------- START CALL ----------------
-  const startCall = async () => {
+  // ---------------- LOCAL STREAM ----------------
+  const getLocalStream = async () => {
     const mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
+      video: {
+        width: { ideal: 640, max: 640 },
+        height: { ideal: 360, max: 360 },
+        frameRate: { ideal: 15, max: 20 },
+        facingMode: 'user'
+      },
       audio: true
     });
 
     setStream(mediaStream);
-    setCalling(true);
 
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = mediaStream;
+    }
+
+    return mediaStream;
+  };
+
+  // ---------------- CREATE PEER ----------------
+  const createPeer = (initiator, mediaStream) => {
     const peer = new Peer({
-      initiator: true,
+      initiator,
       trickle: true,
-      streams: [mediaStream], // ✅ FIX
       config: {
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ],
+        sdpSemantics: 'unified-plan'
       }
     });
 
+    // Add tracks manually (better Safari compatibility)
+    mediaStream.getTracks().forEach((track) => {
+      peer.addTrack(track, mediaStream);
+    });
+
+    // Signaling
     peer.on('signal', (data) => {
-      console.log("📤 SIGNAL OUT:", data.type || (data.candidate ? 'candidate' : 'sdp'));
-      
-      if (data.candidate) {
-        console.log("🧊 ICE CANDIDATE OUT");
-      } else if (data.sdp) {
-        console.log("📡 SDP OUT");
-      }
+      console.log('📤 SIGNAL OUT:', data.type || 'candidate');
 
       socketRef.current.emit('call_signal', {
         consultationId: id,
-        type: data.candidate ? 'candidate' : (peer.initiator ? 'offer' : 'answer'),
+        type: data.candidate
+          ? 'candidate'
+          : initiator
+            ? 'offer'
+            : 'answer',
         signal: data
       });
     });
 
+    // Connection
     peer.on('connect', () => {
-      console.log("✅ PEER CONNECTED");
+      console.log('✅ PEER CONNECTED');
     });
 
-    // ✅ FIX: use TRACK
-    peer.on('track', (track, stream) => {
-      console.log("TRACK RECEIVED");
+    // Track handling
+    peer.on('track', (track, incomingStream) => {
+      console.log('🎥 TRACK RECEIVED:', track.kind);
 
-      const finalStream = stream || new MediaStream([track]);
+      if (!incomingStream) return;
 
-      remoteStreamRef.current = finalStream;
-      setRemoteStream(finalStream);
+      // Prevent duplicate stream resets
+      if (remoteStreamRef.current?.id === incomingStream.id) {
+        return;
+      }
+
+      remoteStreamRef.current = incomingStream;
 
       if (remoteVideoRef.current) {
-        console.log("IMMEDIATE ATTACH");
-        remoteVideoRef.current.srcObject = finalStream;
+        console.log('📺 ATTACHING REMOTE STREAM');
+        remoteVideoRef.current.srcObject = incomingStream;
       }
     });
 
     peer.on('close', () => {
-      console.log("❌ PEER CLOSED");
+      console.log('❌ PEER CLOSED');
     });
 
-    peer.on('error', err => {
-      console.log("🔥 PEER ERROR:", err);
+    peer.on('error', (err) => {
+      console.log('🔥 PEER ERROR:', err);
     });
 
-    connectionRef.current = peer;
+    return peer;
+  };
 
+  // ---------------- START CALL ----------------
+  const startCall = async () => {
+    try {
+      const mediaStream = await getLocalStream();
+
+      setCalling(true);
+
+      const peer = createPeer(true, mediaStream);
+
+      connectionRef.current = peer;
+    } catch (err) {
+      console.log('Start call error:', err);
+    }
   };
 
   // ---------------- ANSWER CALL ----------------
   const answerCall = async () => {
-    const mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true
-    });
+    try {
+      const mediaStream = await getLocalStream();
 
-    setStream(mediaStream);
-    setCallAccepted(true);
-    setReceivingCall(false);
+      setCallAccepted(true);
+      setReceivingCall(false);
 
-    const peer = new Peer({
-      initiator: false,
-      trickle: true,
-      streams: [mediaStream], // ✅ FIX
-      config: {
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-      }
-    });
+      const peer = createPeer(false, mediaStream);
 
-    peer.on('signal', (data) => {
-      console.log("📤 SIGNAL OUT:", data.type || (data.candidate ? 'candidate' : 'sdp'));
+      peer.signal(callerSignal);
 
-      if (data.candidate) {
-        console.log("🧊 ICE CANDIDATE OUT");
-      } else if (data.sdp) {
-        console.log("📡 SDP OUT");
-      }
-
-      socketRef.current.emit('call_signal', {
-        consultationId: id,
-        type: data.candidate ? 'candidate' : (peer.initiator ? 'offer' : 'answer'),
-        signal: data
-      });
-    });
-
-    peer.on('connect', () => {
-      console.log("✅ PEER CONNECTED");
-    });
-
-    // ✅ FIX: use TRACK
-    peer.on('track', (track, stream) => {
-      console.log("TRACK RECEIVED");
-
-      const finalStream = stream || new MediaStream([track]);
-
-      remoteStreamRef.current = finalStream;
-      setRemoteStream(finalStream);
-
-      if (remoteVideoRef.current) {
-        console.log("IMMEDIATE ATTACH");
-        remoteVideoRef.current.srcObject = finalStream;
-      }
-    });
-
-    peer.on('close', () => {
-      console.log("❌ PEER CLOSED");
-    });
-
-    peer.on('error', err => {
-      console.log("🔥 PEER ERROR:", err);
-    });
-
-    peer.signal(callerSignal);
-    connectionRef.current = peer;
-
+      connectionRef.current = peer;
+    } catch (err) {
+      console.log('Answer call error:', err);
+    }
   };
 
-  // ---------------- STREAM ATTACH ----------------
+  // ---------------- CLEANUP ----------------
   useEffect(() => {
-    if (stream && localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
+    return () => {
+      if (connectionRef.current) {
+        connectionRef.current.destroy();
+      }
+
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
   }, [stream]);
-
-  useEffect(() => {
-    if (remoteStream && remoteVideoRef.current) {
-      console.log("Attach remote stream");
-      remoteVideoRef.current.srcObject = remoteStream;
-    }
-  }, [remoteStream]);
-
-  // Force attach when ref becomes ready (retry interval)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (remoteVideoRef.current && remoteStreamRef.current) {
-        if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
-          console.log("FORCING ATTACH (retry)");
-          remoteVideoRef.current.srcObject = remoteStreamRef.current;
-        }
-      }
-    }, 300);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // ---------------- MONITORING ----------------
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (connectionRef.current?._pc) {
-        console.log("🔗 ICE STATE:", connectionRef.current._pc.iceConnectionState);
-        console.log("📶 CONNECTION STATE:", connectionRef.current._pc.connectionState);
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   // ---------------- UI ----------------
   return (
-    <div style={{ height: "100vh", background: "#111", position: "relative" }}>
-
+    <div
+      style={{
+        height: '100vh',
+        background: '#111',
+        position: 'relative'
+      }}
+    >
       {!calling && !callAccepted && (
-        <button onClick={startCall}>Start Call</button>
+        <button
+          onClick={startCall}
+          style={{
+            position: 'absolute',
+            zIndex: 10,
+            top: 20,
+            left: 20
+          }}
+        >
+          Start Call
+        </button>
       )}
 
       {receivingCall && (
-        <div>
+        <div
+          style={{
+            position: 'absolute',
+            zIndex: 10,
+            top: 20,
+            left: 20
+          }}
+        >
           <button onClick={answerCall}>Answer Call</button>
         </div>
       )}
 
-      {/* Remote video */}
+      {/* Remote Video */}
       <video
         ref={remoteVideoRef}
         autoPlay
         playsInline
         style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          display: (calling || callAccepted) ? "block" : "none"
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          background: 'black'
         }}
       />
 
-      {/* Local video */}
+      {/* Local Video */}
       <video
         ref={localVideoRef}
         autoPlay
         muted
         playsInline
         style={{
-          position: "absolute",
+          position: 'absolute',
           top: 20,
           right: 20,
-          width: 200,
-          height: 150,
-          borderRadius: 10,
-          display: (calling || callAccepted) ? "block" : "none"
+          width: 220,
+          height: 160,
+          objectFit: 'cover',
+          borderRadius: 12,
+          background: '#000',
+          border: '2px solid white'
         }}
       />
     </div>
-
   );
 };
 
