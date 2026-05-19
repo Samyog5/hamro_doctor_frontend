@@ -21,6 +21,263 @@ const Dashboard = ({ onLogout }) => {
     }
   }, [userData, navigate]);
 
+  const weight = profile?.bmi?.weight || 0;
+  const heightCm = profile?.bmi?.height || 0;
+  const heightM = heightCm / 100;
+  const bmi = (weight > 0 && heightM > 0) ? (weight / (heightM * heightM)).toFixed(2) : '0.00';
+
+  const getBmiPlan = (bmiValue) => {
+    const bmiVal = parseFloat(bmiValue);
+    if (!bmiVal || bmiVal === 0) {
+      return {
+        category: 'No Data Available',
+        badge: 'Setup Profile',
+        color: 'slate',
+        bgGradient: 'from-slate-500 to-slate-700',
+        textColor: 'text-slate-700',
+        bgColor: 'bg-slate-50',
+        borderColor: 'border-slate-200',
+        iconBg: 'bg-slate-100',
+        iconColor: 'text-slate-500',
+        summary: 'Please update your height and weight in your profile to generate a customized BMI-based health plan.',
+        plans: [
+          {
+            title: 'Complete Profile Setup',
+            desc: 'Head over to your Profile settings page.',
+            icon: '⚙️'
+          },
+          {
+            title: 'Enter Exact Metrics',
+            desc: 'Provide your accurate weight (in kg) and height (in cm).',
+            icon: '📐'
+          },
+          {
+            title: 'Auto Calculation',
+            desc: 'Our system will automatically calculate your exact BMI.',
+            icon: '🧮'
+          },
+          {
+            title: 'Unlock Personalized Plan',
+            desc: 'Get clinical nutrition & exercise tips tailored to you.',
+            icon: '🔓'
+          },
+          {
+            title: 'Daily Tracking',
+            desc: 'Keep checking back to view updated health recommendations.',
+            icon: '📈'
+          },
+          {
+            title: 'Consult a Doctor',
+            desc: 'Request digital consultations if you require specialized care.',
+            icon: '🏥'
+          }
+        ]
+      };
+    }
+
+    if (bmiVal < 18.5) {
+      return {
+        category: 'Underweight Range',
+        badge: 'Nutritional Support Required',
+        color: 'amber',
+        bgGradient: 'from-amber-500 to-orange-600',
+        textColor: 'text-amber-700',
+        bgColor: 'bg-amber-50/50',
+        borderColor: 'border-amber-100',
+        iconBg: 'bg-amber-100/50',
+        iconColor: 'text-amber-600',
+        summary: 'Your BMI is in the underweight range. Focus on nutrient-rich energy sources and resistance training to build healthy muscle tissue and boost immunity.',
+        plans: [
+          {
+            title: 'Healthy Calorie Surplus',
+            desc: 'Aim for a nutrient-dense, calorie-surplus diet. Add 300–500 extra calories per day to support gradual, healthy weight gain.',
+            icon: '🍳'
+          },
+          {
+            title: 'Targeted Protein Intake',
+            desc: 'Eat 1.2 to 2.0 grams of high-quality protein per kilogram of body weight to support healthy lean muscle growth.',
+            icon: '🥩'
+          },
+          {
+            title: 'Resistance Strength Training',
+            desc: 'Focus on full-body strength/resistance exercises 3 times a week to stimulate muscle growth instead of excess cardio.',
+            icon: '🏋️'
+          },
+          {
+            title: 'Frequent Nutrient-Rich Meals',
+            desc: 'Consume 5 to 6 smaller, energy-dense meals throughout the day to avoid feeling prematurely full or bloated.',
+            icon: '🥗'
+          },
+          {
+            title: 'Incorporate Healthy Fats',
+            desc: 'Add avocados, raw nuts, seeds, olive oil, and organic nut butters into your meals for dense, clean energy.',
+            icon: '🥑'
+          },
+          {
+            title: 'Smart Hydration Timing',
+            desc: 'Drink water and fluids in between meals rather than right before or during to maximize appetite capacity.',
+            icon: '🥤'
+          },
+          {
+            title: 'Deep Recovery & Sleep',
+            desc: 'Ensure 8+ hours of deep, restful sleep every night to allow optimal muscle tissue repair and hormone synthesis.',
+            icon: '😴'
+          }
+        ]
+      };
+    } else if (bmiVal < 25) {
+      return {
+        category: 'Healthy Weight Range',
+        badge: 'Excellent Shape',
+        color: 'emerald',
+        bgGradient: 'from-emerald-500 to-teal-600',
+        textColor: 'text-emerald-700',
+        bgColor: 'bg-emerald-50/50',
+        borderColor: 'border-emerald-100',
+        iconBg: 'bg-emerald-100/50',
+        iconColor: 'text-emerald-600',
+        summary: 'Awesome! Your BMI is in the healthy weight range. Keep maintaining your lifestyle with balanced nutrition and regular physical activity.',
+        plans: [
+          {
+            title: 'Balanced Macronutrients',
+            desc: 'Keep consuming complex carbs (whole grains, oats), clean proteins (poultry, legumes), and plenty of colorful fresh produce.',
+            icon: '🍎'
+          },
+          {
+            title: 'Consistent Cardiovascular Activity',
+            desc: 'Aim for at least 150 minutes of moderate aerobic workouts (brisk walking, cycling, swimming) distributed throughout the week.',
+            icon: '🏃'
+          },
+          {
+            title: 'Muscle Toning Exercises',
+            desc: 'Perform bodyweight or free-weight resistance routines 2 days a week to preserve bone density and metabolic vitality.',
+            icon: '💪'
+          },
+          {
+            title: 'Optimum Hydration Levels',
+            desc: 'Drink 2.5 to 3 liters of fresh water daily to maintain cellular health, joint lubrication, and optimal digestion.',
+            icon: '💧'
+          },
+          {
+            title: 'Mindful Eating Practices',
+            desc: 'Maintain weight stability by practicing portion control and tuning in to your natural hunger and satiety signals.',
+            icon: '🧠'
+          },
+          {
+            title: 'Stress Management & Sleep',
+            desc: 'Secure 7 to 9 hours of quality sleep nightly to manage daily cortisol levels and ensure cellular rejuvenation.',
+            icon: '✨'
+          },
+          {
+            title: 'Preventive Health Checks',
+            desc: 'Stay proactive! Schedule regular checkups and monitor your primary metrics like blood pressure and cholesterol.',
+            icon: '🏥'
+          }
+        ]
+      };
+    } else if (bmiVal < 30) {
+      return {
+        category: 'Overweight Range',
+        badge: 'Activity & Nutrition Boost Needed',
+        color: 'orange',
+        bgGradient: 'from-orange-500 to-red-500',
+        textColor: 'text-orange-700',
+        bgColor: 'bg-orange-50/50',
+        borderColor: 'border-orange-100',
+        iconBg: 'bg-orange-100/50',
+        iconColor: 'text-orange-600',
+        summary: 'Your BMI indicates an overweight range. A moderate calorie deficit combined with high-fiber food and physical training will lead to steady weight management.',
+        plans: [
+          {
+            title: 'Moderate Calorie Deficit',
+            desc: 'Create a comfortable, sustainable calorie deficit of 300 to 500 calories under your daily maintenance requirements.',
+            icon: '📉'
+          },
+          {
+            title: 'Enhance Cardiovascular Volume',
+            desc: 'Build up to 45–60 minutes of low-to-medium impact cardio daily, such as power walking, cycling, or jogging.',
+            icon: '🚴'
+          },
+          {
+            title: 'Maximize Dietary Fiber',
+            desc: 'Focus on dietary fiber (beans, lentils, green veggies, berries) to trigger satiety hormones and naturally curb cravings.',
+            icon: '🥦'
+          },
+          {
+            title: 'Resistance Training for Muscle',
+            desc: 'Train with weights or resistance bands 3 times a week to preserve your metabolic rate while burning body fat.',
+            icon: '🏋️‍♂️'
+          },
+          {
+            title: 'Eliminate Refined Sugars',
+            desc: 'Drastically reduce processed sugars, sweetened coffee, sodas, packaged juices, and refined flour products.',
+            icon: '🍩'
+          },
+          {
+            title: 'Nutritious & Mindful Snacking',
+            desc: 'Prepare wholesome snacks like fresh berries, mixed nuts, or hummus with cucumbers to replace packaged convenience foods.',
+            icon: '🍇'
+          },
+          {
+            title: 'Consistent Lifestyle Habits',
+            desc: 'Prioritize gradual progress over extreme diets. Aiming for a steady, healthy loss of 0.5 kg (1 lb) per week is key.',
+            icon: '📆'
+          }
+        ]
+      };
+    } else {
+      return {
+        category: 'Obese Range',
+        badge: 'Clinical Care & Structured Strategy',
+        color: 'red',
+        bgGradient: 'from-red-500 to-rose-700',
+        textColor: 'text-red-700',
+        bgColor: 'bg-red-50/50',
+        borderColor: 'border-red-100',
+        iconBg: 'bg-red-100/50',
+        iconColor: 'text-red-600',
+        summary: 'Your BMI is in the obese range. We strongly recommend low-impact joint-friendly physical activity, specialized dietary planning, and medical checkups.',
+        plans: [
+          {
+            title: 'Consult Professional Care',
+            desc: 'Collaborate with a registered nutritionist or physician to design a personalized and medically safe weight-loss route.',
+            icon: '🩺'
+          },
+          {
+            title: 'Joint-Friendly Low-Impact Cardio',
+            desc: 'Protect your joints by choosing low-impact exercises like swimming, water aerobics, recumbent cycling, or brisk walking.',
+            icon: '🏊'
+          },
+          {
+            title: 'Gradual Pace & Time Progression',
+            desc: 'Begin with short 10–15 minute active daily walks, then gradually scale up the duration as your conditioning improves.',
+            icon: '🚶'
+          },
+          {
+            title: 'Protein & Vegetable Centricity',
+            desc: 'Build all major meals around lean proteins (tofu, egg whites, fish) and non-starchy green vegetables to secure satiety.',
+            icon: '🥗'
+          },
+          {
+            title: 'Zero Sweetened Beverages',
+            desc: 'Replace all sugary beverages, sodas, energy drinks, and juices entirely with pure filtered water or herbal teas.',
+            icon: '💧'
+          },
+          {
+            title: 'Identify Emotional Food Triggers',
+            desc: 'Keep a food and mood journal to identify psychological triggers for stress-eating and substitute with walking or breathing.',
+            icon: '📓'
+          },
+          {
+            title: 'Strict Sleep Regulation',
+            desc: 'Maintain strict sleep patterns. Insufficient sleep triggers hunger hormones (ghrelin) and elevated fat-storage hormones.',
+            icon: '🛌'
+          }
+        ]
+      };
+    }
+  };
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -35,6 +292,7 @@ const Dashboard = ({ onLogout }) => {
   const [requestingId, setRequestingId] = useState(null);
   const [debugData, setDebugData] = useState(null);
   const [showChatBox, setShowChatBox] = useState(false);
+  const [showHealthPlanModal, setShowHealthPlanModal] = useState(false);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -186,16 +444,16 @@ const Dashboard = ({ onLogout }) => {
                 let pct = 0;
                 if (bmi < 18.5) {
                   status = { text: 'Underweight range', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' };
-                  pct = (bmi / 18.5) * 15; // 0-15%
+                  pct = Math.max(2, ((bmi - 15) / (18.5 - 15)) * 10);
                 } else if (bmi < 25) {
                   status = { text: 'Healthy weight range', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' };
-                  pct = 15 + ((bmi - 18.5) / (25 - 18.5)) * 25; // 15-40%
+                  pct = 10 + ((bmi - 18.5) / (25.0 - 18.5)) * (33.3 - 10);
                 } else if (bmi < 30) {
                   status = { text: 'Overweight range', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' };
-                  pct = 45 + ((bmi - 25) / (30 - 25)) * 25; // 45-70%
+                  pct = 33.3 + ((bmi - 25.0) / (30.0 - 25.0)) * (66.6 - 33.3);
                 } else {
                   status = { text: 'Obese range', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' };
-                  pct = 75 + Math.min(((bmi - 30) / 10) * 20, 20); // 75-95%
+                  pct = 66.6 + Math.min(1, (bmi - 30.0) / (40.0 - 30.0)) * (98 - 66.6);
                 }
                 status.percentage = `${pct}%`;
               }
@@ -227,10 +485,10 @@ const Dashboard = ({ onLogout }) => {
                         <div className="flex-1 bg-red-500 rounded-sm"></div>
                         <div className="absolute top-0 w-4 h-full bg-white border-2 border-slate-900 rounded-full shadow-md z-10 transition-all duration-1000" style={{ left: status.percentage, transform: 'translateX(-50%)' }}></div>
                       </div>
-                      <div className="flex justify-between mt-2 text-[10px] font-bold text-slate-400">
-                        <span>18.5</span>
-                        <span>24.9</span>
-                        <span>29.9</span>
+                      <div className="relative h-4 mt-2 text-[10px] font-bold text-slate-400">
+                        <span className="absolute left-[10%] -translate-x-1/2">18.5</span>
+                        <span className="absolute left-[33.3%] -translate-x-1/2">24.9</span>
+                        <span className="absolute left-[66.6%] -translate-x-1/2">29.9</span>
                       </div>
                     </div>
                   </div>
@@ -277,7 +535,10 @@ const Dashboard = ({ onLogout }) => {
                 </svg>
                 <span className="font-medium text-xs"><strong>Today's tip:</strong> A 20-minute walk can improve your mood and heart health.</span>
               </div>
-              <button className="flex items-center gap-1 text-emerald-600 font-bold text-xs hover:underline whitespace-nowrap">
+              <button 
+                onClick={() => setShowHealthPlanModal(true)}
+                className="flex items-center gap-1 text-emerald-600 font-bold text-xs hover:underline whitespace-nowrap"
+              >
                 View health plan
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M5 12h14M12 5l7 7-7 7" />
@@ -531,6 +792,80 @@ const Dashboard = ({ onLogout }) => {
           </div>
         </div>
       )}
+
+      {/* BMI Health Plan Modal Overlay */}
+      {showHealthPlanModal && (() => {
+        const plan = getBmiPlan(bmi);
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-all duration-300 animate-in fade-in">
+            <div className="bg-white rounded-[32px] shadow-2xl border border-slate-100 w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+              {/* Modal Banner Header */}
+              <div className={`bg-gradient-to-br ${plan.bgGradient} p-6 text-white relative overflow-hidden flex-shrink-0`}>
+                <div className="absolute top-0 right-0 w-36 h-36 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+                <div className="flex justify-between items-start relative z-10">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">{plan.badge}</span>
+                    <h3 className="text-xl font-bold mt-2.5 leading-tight">{plan.category} Plan</h3>
+                    <p className="text-white/80 text-xs font-medium mt-1">Your BMI: <strong className="text-white font-bold">{bmi} kg/m²</strong></p>
+                  </div>
+                  <button 
+                    onClick={() => setShowHealthPlanModal(false)}
+                    className="text-white/80 hover:text-white transition-all bg-white/10 hover:bg-white/20 p-2 rounded-full"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content - Scrollable */}
+              <div className="flex-1 p-6 overflow-y-auto bg-slate-50/50 flex flex-col gap-4">
+                <div className={`${plan.bgColor} border ${plan.borderColor} p-4 rounded-2xl`}>
+                  <p className={`text-xs ${plan.textColor} leading-relaxed font-medium`}>{plan.summary}</p>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Personalized Guidelines</h4>
+                  {plan.plans.map((item, idx) => (
+                    <div key={idx} className="bg-white border border-slate-100 p-5 rounded-2xl flex items-start gap-4 shadow-sm hover:shadow-md transition-all group">
+                      <div className="flex-shrink-0 mt-1.5 flex items-center justify-center">
+                        <span className={`w-2.5 h-2.5 rounded-full transition-all duration-300 group-hover:scale-125 bg-${plan.color === 'emerald' ? 'emerald' : plan.color === 'amber' ? 'amber' : plan.color === 'orange' ? 'orange' : plan.color === 'red' ? 'red' : 'slate'}-500 shadow-sm`}></span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="text-xs font-bold text-slate-800 mb-1">{item.title}</h5>
+                        <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-5 bg-white border-t border-slate-100 flex-shrink-0 flex gap-3">
+                {bmi > 0 && bmi !== '0.00' && (
+                  <button 
+                    onClick={() => {
+                      setShowHealthPlanModal(false);
+                      document.getElementById('specialists-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="flex-1 py-3 bg-blue-50 text-blue-600 rounded-2xl text-xs font-bold transition-all hover:bg-blue-600 hover:text-white"
+                  >
+                    Consult a Nutritionist
+                  </button>
+                )}
+                <button 
+                  onClick={() => setShowHealthPlanModal(false)}
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-200 transition-all hover:bg-blue-700"
+                >
+                  Got it, thanks!
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </main>
   );
 };
