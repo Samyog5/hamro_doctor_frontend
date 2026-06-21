@@ -774,7 +774,7 @@ const Dashboard = ({ onLogout }) => {
               <p className="text-xs text-slate-600 leading-relaxed mt-2 font-medium">We're currently working on our AI Chatbot to provide you with 24/7 instant medical guidance.</p>
               <p className="text-xs text-slate-600 leading-relaxed mt-2 font-medium">Stay tuned for a more seamless care experience!</p>
               <div className="flex items-center justify-between mt-4">
-                <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Hamro Care Team</span>
+                <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Third Pole Care Team</span>
                 <span className="text-[9px] text-slate-300 font-bold">Just now</span>
               </div>
             </div>
@@ -788,7 +788,7 @@ const Dashboard = ({ onLogout }) => {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
               </button>
             </div>
-            <p className="text-center text-[9px] text-slate-300 font-bold mt-3 uppercase tracking-tighter">Powered by Hamro Doctor Intelligence</p>
+            <p className="text-center text-[9px] text-slate-300 font-bold mt-3 uppercase tracking-tighter">Powered by Third Pole Intelligence</p>
           </div>
         </div>
       )}

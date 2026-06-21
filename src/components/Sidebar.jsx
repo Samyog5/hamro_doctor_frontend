@@ -37,6 +37,30 @@ const Sidebar = ({ userData, onLogout, isOpen, onClose }) => {
         )
       },
       { 
+        id: 'admin-articles', 
+        label: 'Manage Articles', 
+        path: '/admin/articles',
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        )
+      },
+      { 
+        id: 'prescriptions', 
+        label: 'Prescriptions', 
+        path: '/admin/prescriptions',
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+          </svg>
+        )
+      },
+      { 
         id: 'profile', 
         label: 'Admin Profile', 
         path: '/profile',
@@ -75,6 +99,19 @@ const Sidebar = ({ userData, onLogout, isOpen, onClose }) => {
             <circle cx="8.5" cy="7" r="4"></circle>
             <line x1="20" y1="8" x2="20" y2="14"></line>
             <line x1="17" y1="11" x2="23" y2="11"></line>
+          </svg>
+        )
+      },
+      { 
+        id: 'prescriptions', 
+        label: 'Prescriptions', 
+        path: '/hospital/prescriptions',
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
           </svg>
         )
       },
@@ -297,7 +334,7 @@ const Sidebar = ({ userData, onLogout, isOpen, onClose }) => {
       <div className="flex flex-col overflow-y-auto">
         <div className="p-8 pb-4 flex items-center justify-between">
           <div className="cursor-pointer" onClick={() => { navigate('/dashboard'); onClose(); }}>
-            <img src={logoImg} alt="Hamro Doctor" className="h-8 w-auto" />
+            <img src={logoImg} alt="Third Pole" className="h-8 w-auto" />
           </div>
           <button 
             onClick={onClose}

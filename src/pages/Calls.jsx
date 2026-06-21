@@ -134,10 +134,9 @@ const Calls = () => {
         ) : calls.length > 0 ? (
           <div className="bg-white rounded-[32px] lg:rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
             {/* Desktop Headers */}
-            <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_40px] p-6 bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+            <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_40px] p-6 bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
               <div>Consultant</div>
               <div>Type</div>
-              <div>Duration</div>
               <div>Date</div>
               <div>Status</div>
               <div></div>
@@ -148,7 +147,7 @@ const Calls = () => {
               return (
                 <div key={call.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/30 transition-all group">
                   {/* Desktop Row */}
-                  <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_40px] p-6 items-center">
+                  <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_40px] p-6 items-center">
                     <div>
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-base group-hover:scale-110 transition-transform uppercase overflow-hidden">
@@ -174,7 +173,6 @@ const Calls = () => {
                         {call.type}
                       </div>
                     </div>
-                    <div className="text-sm font-bold text-slate-600">{call.duration}</div>
                     <div className="text-sm font-bold text-slate-600">{call.date}</div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -218,10 +216,7 @@ const Calls = () => {
                             {call.type === 'Video Call' ? '🎥' : '📞'} {call.type}
                           </div>
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Duration</span>
-                          <span className="text-xs font-bold text-slate-700">{call.duration}</span>
-                        </div>
+
                         <div className="flex flex-col gap-1">
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</span>
                           <span className="text-xs font-bold text-slate-700">{call.date}</span>

@@ -196,6 +196,7 @@ const HospitalDashboard = () => {
               <tr className="bg-slate-50/50">
                 <th className="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Identity</th>
                 <th className="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Role</th>
+                {filter === 'doctor' && <th className="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Join Method</th>}
                 <th className="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Status</th>
                 {filter === 'link-requests' && <th className="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Actions</th>}
               </tr>
@@ -203,14 +204,14 @@ const HospitalDashboard = () => {
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
-                  <td colSpan="3" className="px-6 py-20 text-center">
+                  <td colSpan={filter === 'doctor' ? 4 : 3} className="px-6 py-20 text-center">
                     <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
                     <p className="mt-4 text-slate-400 font-bold text-sm uppercase tracking-widest">Loading...</p>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan="3" className="px-6 py-20 text-center text-slate-400 font-medium">No users found for this selection.</td>
+                  <td colSpan={filter === 'doctor' ? 4 : 3} className="px-6 py-20 text-center text-slate-400 font-medium">No users found for this selection.</td>
                 </tr>
               ) : (
                 users.map(user => (
@@ -229,6 +230,13 @@ const HospitalDashboard = () => {
                     <td className="px-6 py-5">
                       <div className="text-sm font-bold text-slate-700 capitalize">{filter === 'link-requests' ? 'Doctor' : user.role}</div>
                     </td>
+                    {filter === 'doctor' && (
+                      <td className="px-6 py-5">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-50 border border-slate-100 text-slate-600`}>
+                          {user.joinMethod || 'Added by Hospital Admin'}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-6 py-5">
                       {filter === 'link-requests' ? (
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${user.status === 'pending' ? 'bg-amber-50 text-amber-600' : user.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>

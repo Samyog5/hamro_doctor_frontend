@@ -1,4 +1,4 @@
-# Hamro Doctor Login Page - UI/UX Overview
+# Third Pole Login Page - UI/UX Overview
 
 ## 📋 Page Layout
 
@@ -12,10 +12,10 @@
 │   (Login Form)           │   (Features & Branding)          │
 │                          │                                    │
 │  ┌──────────────────┐   │  ┌──────────────────────────────┐ │
-│  │    Logo Circle   │   │  │   Welcome to Hamro Doctor    │ │
+│  │    Logo Circle   │   │  │   Welcome to Third Pole    │ │
 │  │   (Blue + Icon)  │   │  │                              │ │
 │  │                  │   │  │   Feature Highlights:        │ │
-│  │  Hamro Doctor    │   │  │   • 24/7 Access             │ │
+│  │  Third Pole    │   │  │   • 24/7 Access             │ │
 │  │  Your Health,    │   │  │   • Secure & Private         │ │
 │  │  Our Priority    │   │  │   • Expert Doctors           │ │
 │  │                  │   │  │   • Digital Prescriptions    │ │
@@ -76,7 +76,7 @@
 - **Shadow**: Subtle blue glow
 
 ### 2. Form Section
-- **Title**: "Hamro Doctor"
+- **Title**: "Third Pole"
 - **Subtitle**: "Your Health, Our Priority"
 - **Fields**:
   - Email/Phone input field

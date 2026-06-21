@@ -5,6 +5,8 @@ import Register from './pages/Register'
 import HospitalRegister from './pages/HospitalRegister'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminOnboard from './pages/AdminOnboard'
+import AdminArticles from './pages/AdminArticles'
+import AdminPrescriptions from './pages/AdminPrescriptions'
 import Dashboard from './pages/Dashboard'
 import Consultations from './pages/Consultations'
 import Calls from './pages/Calls'
@@ -133,8 +135,11 @@ function App() {
           <Route path="/doctor-dashboard" element={<DoctorDashboard onLogout={handleLogout} />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin/onboard" element={<AdminOnboard />} />
+          <Route path="/admin/articles" element={<AdminArticles />} />
+          <Route path="/admin/prescriptions" element={<AdminPrescriptions />} />
           <Route path="/hospital-dashboard" element={<HospitalDashboard />} />
           <Route path="/hospital/onboard" element={<HospitalOnboard />} />
+          <Route path="/hospital/prescriptions" element={<AdminPrescriptions />} />
         </Route>
 
         <Route path="/doctor-onboarding" element={<DoctorOnboarding onLogout={handleLogout} />} />

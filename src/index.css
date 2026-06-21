@@ -1,6 +1,30 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap');
 @config "../tailwind.config.js";
+
+@theme {
+  --color-clinical-primary: #000d43;
+  --color-clinical-secondary: #0051d5;
+  --color-clinical-on-secondary: #ffffff;
+  --color-clinical-surface-container: #e5eeff;
+  --color-clinical-surface-container-low: #eff4ff;
+  --color-clinical-surface-container-high: #dce9ff;
+  --color-clinical-surface-container-highest: #d3e4fe;
+  --color-clinical-surface-main: #F8FAFC;
+  --color-clinical-status-offline: #94A3B8;
+  --color-clinical-status-online: #10B981;
+  --color-clinical-on-surface-variant: #454650;
+  --color-clinical-on-surface: #0b1c30;
+  --color-clinical-outline-variant: #c6c5d2;
+  --color-clinical-secondary-container: #316bf3;
+  --color-clinical-error-container: #ffdad6;
+  --color-clinical-destructive: #EF4444;
+  --color-clinical-accent-cyan: #06B6D4;
+
+  --font-inter: "Inter", sans-serif;
+  --font-manrope: "Manrope", sans-serif;
+}
 
 :root {
   /* Brand Palette */

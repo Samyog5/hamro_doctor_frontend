@@ -220,7 +220,7 @@ function Login({ onLogin }) {
             {/* Logo Section */}
             <div className="flex justify-center lg:justify-start mb-6">
               <div className="py-6 bg-white">
-                <img src={logoImg} alt="Hamro Doctor" className="w-[160px] h-auto object-contain" />
+                <img src={logoImg} alt="Third Pole" className="w-[160px] h-auto object-contain" />
               </div>
             </div>
 

@@ -78,7 +78,7 @@ const Home = () => {
           <div className="w-10 h-10 lg:w-12 lg:h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
             <img src={stethIcon} alt="Logo" className="w-6 h-6 lg:w-8 lg:h-8 invert" />
           </div>
-          <span className="text-xl lg:text-2xl font-black text-slate-900 tracking-tighter">Hamro<span className="text-blue-600">Doctor</span></span>
+          <span className="text-xl lg:text-2xl font-black text-slate-900 tracking-tighter">Third<span className="text-blue-600">Pole</span></span>
         </div>
 
         <div className="hidden lg:flex items-center gap-10">
@@ -286,7 +286,7 @@ const Home = () => {
                 <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center">
                   <img src={stethIcon} alt="Logo" className="w-6 h-6 invert" />
                 </div>
-                <span className="text-xl font-black text-slate-900 tracking-tighter">Hamro<span className="text-blue-600">Doctor</span></span>
+                <span className="text-xl font-black text-slate-900 tracking-tighter">Third<span className="text-blue-600">Pole</span></span>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed font-medium mb-8">
                 Empowering healthcare through digital innovation. Connecting patients with the best medical care in Nepal.
@@ -323,7 +323,7 @@ const Home = () => {
             <div>
               <h5 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6">Contact</h5>
               <ul className="space-y-4 text-sm font-medium text-slate-500">
-                <li>support@hamrodoctor.com</li>
+                <li>support@thirdpole.com</li>
                 <li>+977-1-4XXXXXX</li>
                 <li>Kathmandu, Nepal</li>
               </ul>
@@ -331,7 +331,7 @@ const Home = () => {
           </div>
           
           <div className="pt-10 border-t border-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Hamro Doctor. All rights reserved.</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Third Pole. All rights reserved.</p>
             <div className="flex gap-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               <a href="#" className="hover:text-blue-600">Facebook</a>
               <a href="#" className="hover:text-blue-600">Twitter</a>

@@ -21,7 +21,7 @@ const Layout = ({ userData, onLogout }) => {
           </svg>
         </button>
         <div className="flex-1 flex justify-center px-4">
-          <img src={logoImg} alt="Hamro Doctor" className="h-8 w-auto object-contain" />
+          <img src={logoImg} alt="Third Pole" className="h-8 w-auto object-contain" />
         </div>
         <button className="relative w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

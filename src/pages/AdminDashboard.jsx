@@ -10,14 +10,31 @@ const AdminDashboard = () => {
     pendingHospitals: 0
   });
   const [users, setUsers] = useState([]);
-  const [filter, setFilter] = useState('doctor'); // doctor, hospital, patient
+  const [articles, setArticles] = useState([]);
+  const [totalArticles, setTotalArticles] = useState(0);
+  const [filter, setFilter] = useState('doctor'); // doctor, hospital, patient, article
   const [approvalFilter, setApprovalFilter] = useState('pending'); // pending, approved, all
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const navigate = useNavigate();
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
   const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
+
+  const fetchTotalArticlesCount = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/${apiVersion}/admin/articles`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setTotalArticles(data.count);
+      }
+    } catch (err) {
+      console.error('Failed to fetch total articles count:', err);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -35,12 +52,14 @@ const AdminDashboard = () => {
           pendingHospitals: u.filter(user => user.role === 'hospital' && user.hospitalDetails?.listingRequestStatus === 'pending').length
         });
       }
+      fetchTotalArticlesCount();
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
   };
 
   const fetchUsers = async () => {
+    if (filter === 'article') return;
     setLoading(true);
     try {
       let url = `${apiUrl}/api/${apiVersion}/admin/users?role=${filter}`;
@@ -62,9 +81,37 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchArticles = async (searchVal = searchQuery) => {
+    setLoading(true);
+    try {
+      let url = `${apiUrl}/api/${apiVersion}/admin/articles`;
+      if (searchVal.trim()) {
+        url += `?search=${encodeURIComponent(searchVal.trim())}`;
+      }
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setArticles(data.articles);
+        if (!searchVal.trim()) {
+          setTotalArticles(data.count);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch articles:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
-    fetchUsers();
+    if (filter === 'article') {
+      fetchArticles(searchQuery);
+    } else {
+      fetchUsers();
+    }
   }, [filter, approvalFilter]);
 
   const handleApprove = async (id, status) => {
@@ -84,6 +131,34 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error('Approval failed:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteArticle = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this article? This will permanently delete the article and all associated comments.')) {
+      return;
+    }
+    
+    setActionLoading(id);
+    try {
+      const response = await fetch(`${apiUrl}/api/${apiVersion}/admin/articles/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        fetchArticles(searchQuery);
+        fetchStats();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to delete article.');
+      }
+    } catch (err) {
+      console.error('Failed to delete article:', err);
+      alert('An error occurred while deleting the article.');
     } finally {
       setActionLoading(null);
     }
@@ -158,14 +233,20 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+        <div 
+          onClick={() => navigate('/admin/articles')}
+          className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group cursor-pointer hover:border-blue-100"
+        >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
             </div>
             <div>
-              <div className="text-sm font-bold text-slate-400 uppercase tracking-wider">Verification</div>
-              <div className="text-2xl font-black text-slate-900">High</div>
+              <div className="text-sm font-bold text-slate-400 uppercase tracking-wider">Articles</div>
+              <div className="text-2xl font-black text-slate-900 flex items-center gap-1.5">
+                {totalArticles}
+                <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </div>
             </div>
           </div>
         </div>
