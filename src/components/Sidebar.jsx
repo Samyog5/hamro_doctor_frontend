@@ -48,6 +48,17 @@ const Sidebar = ({ userData, onLogout, isOpen, onClose }) => {
         )
       },
       { 
+        id: 'admin-stories', 
+        label: 'Manage Stories', 
+        path: '/admin/stories',
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="12 8 8 12 12 16 16 12 12 8"></polygon>
+          </svg>
+        )
+      },
+      { 
         id: 'prescriptions', 
         label: 'Prescriptions', 
         path: '/admin/prescriptions',
@@ -193,6 +204,18 @@ const Sidebar = ({ userData, onLogout, isOpen, onClose }) => {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      ) 
+    },
+    { 
+      id: 'stories', 
+      label: 'Health Stories', 
+      path: '/doctor/stories',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
         </svg>
       ) 
     },

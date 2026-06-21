@@ -19,6 +19,14 @@ function DoctorDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Stories states
+  const [stories, setStories] = useState([]);
+  const [activeStoryAuthorIndex, setActiveStoryAuthorIndex] = useState(null);
+  const [activeStoryIndex, setActiveStoryIndex] = useState(null);
+  const [showStoryViewer, setShowStoryViewer] = useState(false);
+  const [storyProgress, setStoryProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
   const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
 
@@ -55,6 +63,26 @@ function DoctorDashboard() {
       });
       const activeData = await activeRes.json();
       if (activeData.success) setActiveConsultations(activeData.consultations);
+
+      // Fetch active stories
+      const storiesRes = await fetch(`${apiUrl}/api/${apiVersion}/stories`);
+      const storiesData = await storiesRes.json();
+      if (storiesData.success) {
+        const grouped = {};
+        (storiesData.stories || []).forEach(story => {
+          const authorId = story.author?._id;
+          if (authorId) {
+            if (!grouped[authorId]) {
+              grouped[authorId] = {
+                author: story.author,
+                stories: []
+              };
+            }
+            grouped[authorId].stories.push(story);
+          }
+        });
+        setStories(Object.values(grouped));
+      }
 
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -123,6 +151,64 @@ function DoctorDashboard() {
     return 'Good evening';
   };
 
+  const handleNextStory = () => {
+    if (activeStoryAuthorIndex === null || activeStoryIndex === null || stories.length === 0) return;
+    
+    const currentAuthorStories = stories[activeStoryAuthorIndex].stories;
+    if (activeStoryIndex < currentAuthorStories.length - 1) {
+      setActiveStoryIndex(prev => prev + 1);
+      setStoryProgress(0);
+    } else {
+      if (activeStoryAuthorIndex < stories.length - 1) {
+        setActiveStoryAuthorIndex(prev => prev + 1);
+        setActiveStoryIndex(0);
+        setStoryProgress(0);
+      } else {
+        setShowStoryViewer(false);
+        setActiveStoryAuthorIndex(null);
+        setActiveStoryIndex(null);
+      }
+    }
+  };
+
+  const handlePrevStory = () => {
+    if (activeStoryAuthorIndex === null || activeStoryIndex === null || stories.length === 0) return;
+
+    if (activeStoryIndex > 0) {
+      setActiveStoryIndex(prev => prev - 1);
+      setStoryProgress(0);
+    } else {
+      if (activeStoryAuthorIndex > 0) {
+        const prevAuthorIdx = activeStoryAuthorIndex - 1;
+        setActiveStoryAuthorIndex(prevAuthorIdx);
+        setActiveStoryIndex(stories[prevAuthorIdx].stories.length - 1);
+        setStoryProgress(0);
+      } else {
+        setStoryProgress(0);
+      }
+    }
+  };
+
+  useEffect(() => {
+    let timer;
+    if (showStoryViewer && !isPaused && activeStoryAuthorIndex !== null && activeStoryIndex !== null && stories.length > 0) {
+      const intervalTime = 50;
+      const duration = 5000;
+      const step = (intervalTime / duration) * 100;
+
+      timer = setInterval(() => {
+        setStoryProgress(prev => {
+          if (prev >= 100) {
+            handleNextStory();
+            return 0;
+          }
+          return prev + step;
+        });
+      }, intervalTime);
+    }
+    return () => clearInterval(timer);
+  }, [showStoryViewer, isPaused, activeStoryAuthorIndex, activeStoryIndex, stories]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -190,6 +276,49 @@ function DoctorDashboard() {
           {/* Left Column: Hero, New Requests & Sessions */}
           <div className="col-span-12 lg:col-span-8 space-y-6">
             
+            {/* Health Stories Tray */}
+            {stories.length > 0 && (
+              <section className="bg-white border border-clinical-outline-variant/30 rounded-[32px] p-6 shadow-sm animate-in fade-in duration-500">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="material-symbols-outlined text-clinical-primary">history_toggle_off</span>
+                  <h3 className="text-base font-bold text-clinical-primary">New Stories</h3>
+                </div>
+                <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
+                  {stories.map((group, groupIdx) => (
+                    <button
+                      key={group.author._id}
+                      onClick={() => {
+                        setActiveStoryAuthorIndex(groupIdx);
+                        setActiveStoryIndex(0);
+                        setStoryProgress(0);
+                        setShowStoryViewer(true);
+                      }}
+                      className="flex flex-col items-center gap-2 group flex-shrink-0 focus:outline-none"
+                    >
+                      <div className="w-16 h-16 rounded-full p-[3px] bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 group-hover:scale-105 transition-all shadow-md">
+                        <div className="w-full h-full rounded-full bg-white p-[2px]">
+                          {group.author.profile?.avatar ? (
+                            <img
+                              src={group.author.profile.avatar.startsWith('http') || group.author.profile.avatar.startsWith('data:') ? group.author.profile.avatar : `${apiUrl}${group.author.profile.avatar}`}
+                              alt=""
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-base">
+                              {group.author.name?.charAt(0) || 'D'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-slate-700 max-w-[80px] truncate group-hover:text-clinical-primary transition-colors">
+                        {group.author.name?.split(' ')[0] || 'Doctor'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Hero Section: Practice Insights */}
             <section className="hero-gradient rounded-[32px] p-12 text-white relative overflow-hidden custom-shadow min-h-[400px] flex flex-col justify-between">
               {/* Background Decorative Element */}
@@ -238,7 +367,7 @@ function DoctorDashboard() {
               <section className="animate-in fade-in slide-in-from-bottom duration-500 space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xl font-bold text-clinical-primary flex items-center gap-2">
-                    New Requests
+                    New Consultation Requests
                     <span className="px-2.5 py-0.5 bg-amber-500 text-white rounded-full text-xs font-bold shadow-md">
                       {pendingRequests.length}
                     </span>
@@ -437,6 +566,21 @@ function DoctorDashboard() {
                     chevron_right
                   </span>
                 </button>
+
+                <button 
+                  onClick={() => navigate('/doctor/stories')}
+                  className="w-full flex items-center justify-between p-4 bg-clinical-surface-main hover:bg-clinical-surface-container rounded-2xl transition-all group border border-transparent hover:border-clinical-secondary/20"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-clinical-outline-variant/30 flex items-center justify-center text-clinical-primary group-hover:bg-clinical-primary group-hover:text-white transition-all shadow-sm">
+                      <span className="material-symbols-outlined text-lg">auto_stories</span>
+                    </div>
+                    <span className="text-sm font-bold text-clinical-primary">Health Stories</span>
+                  </div>
+                  <span className="material-symbols-outlined text-clinical-on-surface-variant/40 group-hover:translate-x-1 transition-transform">
+                    chevron_right
+                  </span>
+                </button>
               </div>
             </section>
 
@@ -462,6 +606,117 @@ function DoctorDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Story Viewer Modal */}
+      {showStoryViewer && activeStoryAuthorIndex !== null && activeStoryIndex !== null && stories[activeStoryAuthorIndex] && (
+        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[200] flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
+          <div 
+            className="w-full max-w-[420px] h-full sm:h-[80vh] sm:rounded-[32px] overflow-hidden bg-slate-900 relative shadow-2xl flex flex-col justify-between"
+            onMouseDown={() => setIsPaused(true)}
+            onMouseUp={() => setIsPaused(false)}
+            onTouchStart={() => setIsPaused(true)}
+            onTouchEnd={() => setIsPaused(false)}
+          >
+            {stories[activeStoryAuthorIndex].stories[activeStoryIndex].image ? (
+              <img 
+                src={stories[activeStoryAuthorIndex].stories[activeStoryIndex].image} 
+                alt="" 
+                className="absolute inset-0 w-full h-full object-cover z-0 select-none pointer-events-none"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-tr from-slate-900 via-indigo-950 to-blue-950 z-0"></div>
+            )}
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 z-10 pointer-events-none"></div>
+
+            <div className="p-4 relative z-20 w-full select-none">
+              <div className="flex gap-1.5 mb-4">
+                {stories[activeStoryAuthorIndex].stories.map((_, idx) => (
+                  <div key={idx} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-white transition-all ease-linear"
+                      style={{ 
+                        width: idx < activeStoryIndex ? '100%' : idx === activeStoryIndex ? `${storyProgress}%` : '0%',
+                        transitionDuration: idx === activeStoryIndex ? '50ms' : '0ms'
+                      }}
+                    ></div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full border-2 border-white/50 overflow-hidden flex-shrink-0 bg-slate-800">
+                    {stories[activeStoryAuthorIndex].author.profile?.avatar ? (
+                      <img 
+                        src={stories[activeStoryAuthorIndex].author.profile.avatar.startsWith('http') || stories[activeStoryAuthorIndex].author.profile.avatar.startsWith('data:') ? stories[activeStoryAuthorIndex].author.profile.avatar : `${apiUrl}${stories[activeStoryAuthorIndex].author.profile.avatar}`} 
+                        alt="" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center font-bold text-white text-sm bg-blue-600">
+                        {stories[activeStoryAuthorIndex].author.name?.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-white text-sm font-bold leading-none">{stories[activeStoryAuthorIndex].author.name}</h4>
+                    <span className="text-[10px] text-white/70 font-semibold tracking-wide block mt-1">
+                      {stories[activeStoryAuthorIndex].author.doctorDetails?.speciality || 'Specialist'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="px-2.5 py-0.5 bg-white/20 backdrop-blur-md text-white text-[9px] font-bold rounded-full uppercase tracking-wider">
+                    {stories[activeStoryAuthorIndex].stories[activeStoryIndex].category}
+                  </span>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowStoryViewer(false);
+                      setActiveStoryAuthorIndex(null);
+                      setActiveStoryIndex(null);
+                    }}
+                    className="p-1 bg-white/10 hover:bg-white/25 rounded-full text-white transition-all flex items-center justify-center"
+                  >
+                    <span className="material-symbols-outlined text-lg">close</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute inset-x-0 top-20 bottom-32 z-10 flex">
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrevStory();
+                }}
+                className="w-[30%] h-full cursor-w-resize"
+              ></div>
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNextStory();
+                }}
+                className="w-[70%] h-full cursor-e-resize"
+              ></div>
+            </div>
+
+            <div className="p-6 relative z-20 w-full text-white select-none">
+              <h3 className="text-lg font-black tracking-tight leading-tight mb-2 text-white">
+                {stories[activeStoryAuthorIndex].stories[activeStoryIndex].title}
+              </h3>
+              
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/15">
+                <span className="text-[9px] text-white/50 font-bold uppercase tracking-wider">
+                  Hamro Doctor Verified
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

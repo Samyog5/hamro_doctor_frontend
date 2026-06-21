@@ -25,6 +25,8 @@ import HospitalDashboard from './pages/HospitalDashboard'
 import HospitalOnboard from './pages/HospitalOnboard'
 import Layout from './components/Layout'
 import Home from './pages/Home'
+import DoctorStories from './pages/DoctorStories'
+import AdminStories from './pages/AdminStories'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -133,7 +135,9 @@ function App() {
           <Route path="/messages/:id?" element={<Messages />} />
           <Route path="/profile" element={<Profile onUpdateUser={handleUpdateUser} />} />
           <Route path="/doctor-dashboard" element={<DoctorDashboard onLogout={handleLogout} />} />
+          <Route path="/doctor/stories" element={<DoctorStories />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/stories" element={<AdminStories />} />
           <Route path="/admin/onboard" element={<AdminOnboard />} />
           <Route path="/admin/articles" element={<AdminArticles />} />
           <Route path="/admin/prescriptions" element={<AdminPrescriptions />} />
