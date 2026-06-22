@@ -418,6 +418,17 @@ const Dashboard = ({ onLogout }) => {
     }
   };
 
+  const getRelativeTime = (createdAt) => {
+    const diff = Date.now() - new Date(createdAt).getTime();
+    const hours = Math.floor(diff / (60 * 60 * 1000));
+    if (hours === 0) {
+      const minutes = Math.floor(diff / (60 * 1000));
+      if (minutes === 0) return 'Just now';
+      return `${minutes}m ago`;
+    }
+    return `${hours}h ago`;
+  };
+
   useEffect(() => {
     let timer;
     if (showStoryViewer && !isPaused && activeStoryAuthorIndex !== null && activeStoryIndex !== null && stories.length > 0) {
@@ -1056,7 +1067,12 @@ const Dashboard = ({ onLogout }) => {
                     )}
                   </div>
                   <div>
-                    <h4 className="text-white text-sm font-bold leading-none">{stories[activeStoryAuthorIndex].author.name}</h4>
+                    <div className="flex items-baseline gap-2">
+                      <h4 className="text-white text-sm font-bold leading-none">{stories[activeStoryAuthorIndex].author.name}</h4>
+                      <span className="text-[10px] text-white/50 font-medium">
+                        • {getRelativeTime(stories[activeStoryAuthorIndex].stories[activeStoryIndex].createdAt)}
+                      </span>
+                    </div>
                     <span className="text-[10px] text-white/70 font-semibold tracking-wide block mt-1">
                       {stories[activeStoryAuthorIndex].author.doctorDetails?.speciality || 'Specialist'}
                     </span>
