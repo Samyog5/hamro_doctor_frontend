@@ -294,6 +294,330 @@ const Dashboard = ({ onLogout }) => {
   const [showChatBox, setShowChatBox] = useState(false);
   const [showHealthPlanModal, setShowHealthPlanModal] = useState(false);
 
+  // Chatbot states
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [showSpecialistChips, setShowSpecialistChips] = useState(false);
+
+  const specialties = [
+    'Cardiologist', 'Dermatologist', 'Neurologist', 'Dentist', 
+    'Pediatrician', 'Orthopedic', 'Gynecologist', 'General Physician'
+  ];
+
+  // Fetch chat history when popup is opened
+  useEffect(() => {
+    if (showChatBox) {
+      const fetchChatHistory = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+          const response = await fetch(`${apiUrl}/api/v1/chatbot/history`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (data.success) {
+            setChatMessages(data.messages || []);
+          }
+        } catch (err) {
+          console.error('Error fetching chatbot history:', err);
+        }
+      };
+      fetchChatHistory();
+    }
+  }, [showChatBox]);
+
+  // Autoscroll chat area to the bottom
+  useEffect(() => {
+    const chatContainer = document.getElementById('chatbot-messages');
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  }, [chatMessages, isChatLoading]);
+
+  // Send message to the backend chatbot route
+  const handleSendChatMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || isChatLoading) return;
+
+    const userText = chatInput;
+    setChatInput('');
+    await executeChatCommand(userText);
+  };
+
+  // Centralized command runner (also handles quick actions / short circuits)
+  const executeChatCommand = async (commandText) => {
+    if (isChatLoading) return;
+    
+    let displayMessage = commandText;
+    
+    // Toggle specialist chips display
+    if (commandText === '/doctors') {
+      displayMessage = "🩺 Find Doctor";
+      setShowSpecialistChips(true);
+    } else if (commandText.startsWith('/doctors?speciality=')) {
+      const spec = commandText.split('=')[1];
+      displayMessage = `🔍 Find Doctors in ${spec}`;
+      setShowSpecialistChips(true); // Keep chips open so they can change specialty
+      
+      setChatMessages(prev => [...prev, { sender: 'user', text: displayMessage, timestamp: new Date() }]);
+      setIsChatLoading(true);
+
+      try {
+        const token = localStorage.getItem('token');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        
+        // Direct API Call as requested in Task 3
+        const response = await fetch(`${apiUrl}/api/v1/users/doctors?speciality=${spec}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        let botReplyText = '';
+        if (data.success) {
+          const doctors = data.doctors || [];
+          if (doctors.length === 0) {
+            botReplyText = `I couldn't find any matching ${spec}s currently available on the platform.`;
+          } else {
+            botReplyText = `Here are the matching specialists I found on the platform:\n\n`;
+            doctors.forEach(doc => {
+              botReplyText += `- **Dr. ${doc.name}** (${doc.doctorDetails?.speciality || spec})\n`;
+              botReplyText += `  Experience: ${doc.doctorDetails?.experience || 0} years\n`;
+              botReplyText += `  Status: ${doc.doctorDetails?.isOnline ? '🟢 Online' : '⚪ Offline'}\n`;
+              botReplyText += `  Doctor ID for booking: \`${doc._id}\`\n\n`;
+            });
+            botReplyText += `To book a digital consultation, you can click the **Consult Now** button on their card or say: *"Request a consultation with Dr. <Doctor ID>"*.`;
+          }
+        } else {
+          botReplyText = `Error fetching doctors: ${data.error || 'Unknown error'}`;
+        }
+
+        // Save this message pair to the chatbot session history in backend
+        const saveResponse = await fetch(`${apiUrl}/api/v1/chatbot/save`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ userMessage: displayMessage, botReply: botReplyText })
+        });
+        const saveData = await saveResponse.json();
+        if (saveData.success) {
+          setChatMessages(saveData.messages || []);
+        } else {
+          setChatMessages(prev => [...prev, { sender: 'bot', text: botReplyText, timestamp: new Date() }]);
+        }
+      } catch (err) {
+        console.error('Error fetching doctors directly:', err);
+        setChatMessages(prev => [...prev, { sender: 'bot', text: 'Error connecting to the server.', timestamp: new Date() }]);
+      } finally {
+        setIsChatLoading(false);
+      }
+      return;
+    } else if (commandText === '/hospitals') {
+      displayMessage = "🏥 Hospitals";
+      setShowSpecialistChips(false);
+    } else if (commandText === '/my_consultations') {
+      displayMessage = "💬 My Consultations";
+      setShowSpecialistChips(false);
+    } else if (commandText.startsWith('/request_consultation')) {
+      const parts = commandText.trim().split(' ');
+      if (parts.length > 1) {
+        displayMessage = "📞 Initiating Digital Consultation Request...";
+      } else {
+        displayMessage = "📞 Request Consultation";
+      }
+      setShowSpecialistChips(false);
+    } else {
+      // Freeform chat text hide chips
+      setShowSpecialistChips(false);
+    }
+
+    setChatMessages(prev => [...prev, { sender: 'user', text: displayMessage, timestamp: new Date() }]);
+    setIsChatLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${apiUrl}/api/v1/chatbot/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ message: commandText })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setChatMessages(data.messages || []);
+      } else {
+        setChatMessages(prev => [
+          ...prev, 
+          { sender: 'bot', text: data.reply || 'Sorry, I encountered an error.', timestamp: new Date() }
+        ]);
+      }
+    } catch (err) {
+      console.error('Chatbot API request failed:', err);
+      setChatMessages(prev => [
+        ...prev, 
+        { sender: 'bot', text: 'Unable to connect to the assistant server. Please check your network and server state.', timestamp: new Date() }
+      ]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+  const handleQuickAction = async (command) => {
+    if (isChatLoading) return;
+    
+    if (command === '/symptoms') {
+      setShowSpecialistChips(false);
+      const triageMessage = "Please describe your symptoms directly (e.g. 'fever and cough', 'nerve pain', 'skin rash'). I will suggest the correct specialist field immediately.";
+      setChatMessages(prev => [
+        ...prev,
+        { sender: 'user', text: "🧠 Describe Symptoms", timestamp: new Date() },
+        { sender: 'bot', text: triageMessage, timestamp: new Date() }
+      ]);
+      return;
+    }
+    
+    await executeChatCommand(command);
+  };
+
+  const handleConsultNowDirect = async (doctorId) => {
+    if (!doctorId || isChatLoading) return;
+    await executeChatCommand(`/request_consultation ${doctorId}`);
+  };
+
+  // Parser helper to render structured doctor listings as React components
+  // Parser helper to render markdown bold tags (e.g. **text**) as <strong> elements
+  // Parser helper to render markdown headings (###, ##, #), bold text (**), and italic text (*)
+  const renderFormattedText = (text) => {
+    if (!text) return null;
+    
+    const lines = text.split('\n');
+    
+    return lines.map((line, lineIdx) => {
+      let isHeader = false;
+      let cleanLine = line;
+      
+      // Match markdown headers
+      if (line.startsWith('### ') || line.startsWith('## ') || line.startsWith('# ')) {
+        isHeader = true;
+        cleanLine = line.replace(/^#{1,3}\s+/, '');
+      }
+      
+      const parseBoldsAndItalics = (txt) => {
+        const boldParts = txt.split('**');
+        return boldParts.map((boldPart, bIdx) => {
+          const isBold = bIdx % 2 === 1;
+          const italicParts = boldPart.split('*');
+          const elements = italicParts.map((italicPart, iIdx) => {
+            const isItalic = iIdx % 2 === 1;
+            if (isItalic) {
+              return <em key={`i-${iIdx}`} className="italic font-semibold text-slate-800">{italicPart}</em>;
+            }
+            return italicPart;
+          });
+          
+          if (isBold) {
+            return <strong key={`b-${bIdx}`} className="font-extrabold text-blue-600 dark:text-blue-500">{elements}</strong>;
+          }
+          return <span key={`b-${bIdx}`}>{elements}</span>;
+        });
+      };
+      
+      const parsedContent = parseBoldsAndItalics(cleanLine);
+      
+      if (isHeader) {
+        return (
+          <span key={lineIdx} className="block font-black text-[11px] text-blue-600 uppercase tracking-wider mt-3 mb-1.5">
+            {parsedContent}
+          </span>
+        );
+      }
+      
+      return (
+        <span key={lineIdx} className="block min-h-[1.25em]">
+          {parsedContent}
+        </span>
+      );
+    });
+  };
+
+  // Parser helper to render structured doctor listings as React components
+  const renderMessageContent = (msg) => {
+    const text = msg.text;
+    
+    if (text.includes("Doctor ID for booking:")) {
+      const parts = text.split("- **Dr. ");
+      const introText = parts[0];
+      const docBlocks = parts.slice(1).filter(b => b.trim());
+      
+      return (
+        <div className="flex flex-col gap-3.5 w-full">
+          {introText && <p className="text-xs leading-relaxed font-medium mb-1 whitespace-pre-wrap">{renderFormattedText(introText.trim())}</p>}
+          <div className="grid grid-cols-1 gap-3.5 w-full mt-1">
+            {docBlocks.map((block, idx) => {
+              try {
+                const lines = block.split('\n');
+                const nameAndSpec = lines[0]; // "Sachin Gautam** (Neuro)"
+                const name = nameAndSpec.split('**')[0].trim();
+                const speciality = nameAndSpec.split('(')[1]?.replace(')', '').trim() || 'Specialist';
+                
+                const expLine = lines.find(l => l.includes("Experience:"));
+                const experience = expLine ? expLine.replace("Experience:", "").trim() : 'N/A';
+                
+                const statusLine = lines.find(l => l.includes("Status:"));
+                const isOnline = statusLine && statusLine.includes("Online");
+                
+                const idLine = lines.find(l => l.includes("Doctor ID for booking:"));
+                const doctorId = idLine ? idLine.split("`")[1].trim() : '';
+
+                return (
+                  <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-3.5 flex flex-col gap-3 shadow-sm hover:shadow hover:border-slate-200/50 transition-all text-slate-800 w-full">
+                    <div className="flex items-start justify-between w-full gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-xs uppercase border border-blue-100/50 shrink-0">
+                          {name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-bold text-slate-900 truncate">Dr. {name}</h4>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider truncate">{speciality}</span>
+                            <span className="text-slate-200 text-[8px]">•</span>
+                            <span className="text-[9px] text-slate-400 font-medium shrink-0">{experience} exp</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <span className="text-[9px] font-bold text-slate-500 flex items-center gap-1 shrink-0 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                        <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse shadow-sm shadow-emerald-400' : 'bg-slate-300'}`}></span>
+                        {isOnline ? 'Online' : 'Offline'}
+                      </span>
+                    </div>
+                    
+                    <button 
+                      onClick={() => handleConsultNowDirect(doctorId)}
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-bold transition-all cursor-pointer shadow-sm active:scale-[0.98] text-center"
+                    >
+                      Consult Now
+                    </button>
+                  </div>
+                );
+              } catch (err) {
+                console.error("Failed to parse doctor block:", err);
+                return <pre key={idx} className="text-[9px] bg-slate-50 p-2 rounded-lg text-slate-500 overflow-x-auto">- **Dr. {block}</pre>;
+              }
+            })}
+          </div>
+        </div>
+      );
+    }
+    
+    return <p className="text-xs leading-relaxed font-medium whitespace-pre-wrap">{renderFormattedText(text)}</p>;
+  };
+
   // Stories states
   const [stories, setStories] = useState([]);
   const [activeStoryAuthorIndex, setActiveStoryAuthorIndex] = useState(null);
@@ -915,28 +1239,125 @@ const Dashboard = ({ onLogout }) => {
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-6 bg-slate-50/50 min-h-[320px] flex flex-col gap-4 overflow-y-auto">
-            <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 self-start max-w-[90%] transform transition-all animate-in fade-in slide-in-from-left-2">
-              <p className="text-xs text-slate-800 leading-relaxed font-bold">Hi {userData?.name?.split(' ')[0] || 'there'}, 👋</p>
-              <p className="text-xs text-slate-600 leading-relaxed mt-2 font-medium">We're currently working on our AI Chatbot to provide you with 24/7 instant medical guidance.</p>
-              <p className="text-xs text-slate-600 leading-relaxed mt-2 font-medium">Stay tuned for a more seamless care experience!</p>
-              <div className="flex items-center justify-between mt-4">
-                <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Third Pole Care Team</span>
-                <span className="text-[9px] text-slate-300 font-bold">Just now</span>
+          <div id="chatbot-messages" className="flex-1 p-6 bg-slate-50/50 min-h-[320px] max-h-[350px] flex flex-col gap-4 overflow-y-auto">
+            {chatMessages.length === 0 ? (
+              <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 self-start max-w-[90%] transform transition-all animate-in fade-in slide-in-from-left-2">
+                <p className="text-xs text-slate-800 leading-relaxed font-bold">Hi {userData?.name?.split(' ')[0] || 'there'}, 👋</p>
+                <p className="text-xs text-slate-600 leading-relaxed mt-2 font-medium">I am your AI Receptionist. I can recommend specialists, find doctors, check clinic details, or help request a digital consultation.</p>
+                <p className="text-xs text-slate-600 leading-relaxed mt-2 font-medium">How can I help you today?</p>
+                <div className="flex items-center justify-between mt-4">
+                  <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Third Pole Care Team</span>
+                  <span className="text-[9px] text-slate-300 font-bold">Just now</span>
+                </div>
               </div>
+            ) : (
+              chatMessages.map((msg, index) => (
+                <div 
+                  key={index} 
+                  className={`p-4 rounded-2xl shadow-sm border max-w-[90%] transform transition-all animate-in fade-in ${
+                    msg.sender === 'user' 
+                      ? 'bg-blue-600 text-white border-blue-500 rounded-tr-none self-end slide-in-from-right-2' 
+                      : 'bg-white text-slate-800 border-slate-100 rounded-tl-none self-start slide-in-from-left-2'
+                  }`}
+                >
+                  {msg.sender === 'user' ? (
+                    <p className="text-xs leading-relaxed font-medium whitespace-pre-wrap">{msg.text}</p>
+                  ) : (
+                    renderMessageContent(msg)
+                  )}
+                  <div className="flex justify-end mt-1.5">
+                    <span className={`text-[8px] font-bold ${msg.sender === 'user' ? 'text-blue-200' : 'text-slate-400'}`}>
+                      {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+            {isChatLoading && (
+              <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 self-start max-w-[90%] flex items-center gap-1.5 transform transition-all animate-in fade-in slide-in-from-left-2">
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce"></div>
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+              </div>
+            )}
+          </div>
+
+          {/* Specialist Chips */}
+          {showSpecialistChips && (
+            <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex gap-1.5 overflow-x-auto scrollbar-hide select-none">
+              {specialties.map(spec => (
+                <button
+                  key={spec}
+                  type="button"
+                  onClick={() => handleQuickAction(`/doctors?speciality=${spec}`)}
+                  className="px-2.5 py-1 bg-white hover:bg-blue-600 hover:text-white border border-slate-200 hover:border-blue-600 rounded-full text-[9px] font-bold text-slate-500 transition-all whitespace-nowrap cursor-pointer"
+                >
+                  {spec}
+                </button>
+              ))}
             </div>
+          )}
+
+          {/* Quick Actions Panel */}
+          <div className="px-4 py-2 bg-white border-t border-slate-50 flex gap-2 overflow-x-auto scrollbar-hide select-none">
+            <button 
+              type="button"
+              onClick={() => handleQuickAction('/doctors')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-all whitespace-nowrap cursor-pointer"
+            >
+              🩺 Find Doctor
+            </button>
+            <button 
+              type="button"
+              onClick={() => handleQuickAction('/hospitals')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-all whitespace-nowrap cursor-pointer"
+            >
+              🏥 Hospitals
+            </button>
+            <button 
+              type="button"
+              onClick={() => handleQuickAction('/my_consultations')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-all whitespace-nowrap cursor-pointer"
+            >
+              💬 My Consultations
+            </button>
+            <button 
+              type="button"
+              onClick={() => handleQuickAction('/request_consultation')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-all whitespace-nowrap cursor-pointer"
+            >
+              📞 Request Consultation
+            </button>
+            <button 
+              type="button"
+              onClick={() => handleQuickAction('/symptoms')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-all whitespace-nowrap cursor-pointer"
+            >
+              🧠 Describe Symptoms
+            </button>
           </div>
 
           {/* Footer Area */}
-          <div className="p-4 bg-white border-t border-slate-100">
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 opacity-60 cursor-not-allowed group transition-all">
-              <span className="text-xs text-slate-400 font-bold flex-1 italic">Chatbot coming soon...</span>
-              <button className="text-slate-300 transition-colors">
+          <form onSubmit={handleSendChatMessage} className="p-4 bg-white border-t border-slate-100">
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 focus-within:border-blue-500 focus-within:bg-white transition-all">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask me anything..."
+                disabled={isChatLoading}
+                className="text-xs text-slate-700 bg-transparent outline-none flex-1 font-medium placeholder-slate-400"
+              />
+              <button 
+                type="submit"
+                disabled={isChatLoading || !chatInput.trim()}
+                className={`transition-colors ${chatInput.trim() && !isChatLoading ? 'text-blue-600 hover:text-blue-700' : 'text-slate-300'}`}
+              >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
               </button>
             </div>
             <p className="text-center text-[9px] text-slate-300 font-bold mt-3 uppercase tracking-tighter">Powered by Third Pole Intelligence</p>
-          </div>
+          </form>
         </div>
       )}
 
