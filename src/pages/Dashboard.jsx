@@ -293,6 +293,9 @@ const Dashboard = ({ onLogout }) => {
   const [debugData, setDebugData] = useState(null);
   const [showChatBox, setShowChatBox] = useState(false);
   const [showHealthPlanModal, setShowHealthPlanModal] = useState(false);
+  const [showAIPromotion, setShowAIPromotion] = useState(() => {
+    return !localStorage.getItem('dismissedThirdPoleAIPromotionToast');
+  });
 
   // Chatbot states
   const [chatMessages, setChatMessages] = useState([]);
@@ -1132,29 +1135,6 @@ const Dashboard = ({ onLogout }) => {
 
         {/* Right Column */}
         <div className="flex flex-col gap-6">
-          <section className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900 mb-4">Today's Schedule</h3>
-            <div className="text-center py-4">
-              <div className="mb-6 flex justify-center">
-                <svg width="80" height="80" viewBox="0 0 100 100">
-                  <rect x="10" y="20" width="80" height="70" rx="8" fill="#F8FAFC" stroke="#E2E8F0" strokeWidth="2" />
-                  <rect x="10" y="20" width="80" height="20" rx="8" fill="#3B82F6" />
-                  <circle cx="80" cy="70" r="12" fill="#10B981" />
-                  <path d="M74 70l4 4 8-8" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <h4 className="font-bold text-slate-900 mb-1 leading-tight">No appointments today</h4>
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed">You're all set! Check-ups help you stay ahead of health issues.</p>
-              <button className="w-full py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 transition-all hover:bg-blue-700 hover:-translate-y-0.5 mb-4">Book a check-up</button>
-              <button className="flex items-center justify-center gap-1.5 w-full text-slate-400 font-bold text-xs hover:text-slate-600 transition-colors uppercase tracking-widest">
-                View full calendar
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          </section>
-
 
 
           <section className="bg-amber-50 border border-amber-100 rounded-[24px] p-6 shadow-sm">
@@ -1557,6 +1537,67 @@ const Dashboard = ({ onLogout }) => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Third Pole AI Promotional Toast/Popup */}
+      {showAIPromotion && !showChatBox && (
+        <div className="fixed bottom-6 right-6 w-[320px] bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 p-5 flex flex-col gap-3 animate-in slide-in-from-bottom-5 duration-300 z-[120]">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-base shrink-0 border border-blue-100/50">
+                🤖
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-800 tracking-wide">Meet Third Pole AI</h4>
+                <span className="text-[9px] font-bold text-emerald-500 flex items-center gap-1 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Active Now
+                </span>
+              </div>
+            </div>
+            <button 
+              onClick={() => {
+                setShowAIPromotion(false);
+                localStorage.setItem('dismissedThirdPoleAIPromotionToast', 'true');
+              }}
+              className="text-slate-400 hover:text-slate-600 transition-all p-1 rounded-full hover:bg-slate-50 cursor-pointer"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          {/* Body */}
+          <p className="text-[11px] text-slate-500 font-semibold leading-relaxed">
+            Need help finding a doctor or checking symptoms? Chat with our intelligent assistant to get recommendations instantly.
+          </p>
+
+          {/* Footer Actions */}
+          <div className="flex items-center gap-2 mt-1">
+            <button 
+              onClick={() => {
+                setShowAIPromotion(false);
+                localStorage.setItem('dismissedThirdPoleAIPromotionToast', 'true');
+                setShowChatBox(true);
+              }}
+              className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-bold shadow-sm transition-all text-center cursor-pointer active:scale-95"
+            >
+              Try Chat Assistant
+            </button>
+            <button 
+              onClick={() => {
+                setShowAIPromotion(false);
+                localStorage.setItem('dismissedThirdPoleAIPromotionToast', 'true');
+              }}
+              className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl text-[10px] font-bold transition-all text-center cursor-pointer"
+            >
+              Dismiss
+            </button>
           </div>
         </div>
       )}

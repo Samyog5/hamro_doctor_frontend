@@ -73,20 +73,20 @@ const Messages = () => {
         });
         const data = await response.json();
         if (data.success) {
-          // Filter only active consultations for the messenger view
-          const activeCons = data.consultations.filter(c => c.status === 'active');
-          setConversations(activeCons);
+          // Filter active and completed consultations for the messenger view
+          const allowedCons = data.consultations.filter(c => c.status === 'active' || c.status === 'completed');
+          setConversations(allowedCons);
 
           // Select chat based on URL ID or first available
           if (urlChatId) {
-            const targetChat = activeCons.find(c => c._id === urlChatId);
+            const targetChat = allowedCons.find(c => c._id === urlChatId);
             if (targetChat) {
               handleSelectChat(targetChat);
-            } else if (activeCons.length > 0) {
-              handleSelectChat(activeCons[0]);
+            } else if (allowedCons.length > 0) {
+              handleSelectChat(allowedCons[0]);
             }
-          } else if (activeCons.length > 0) {
-            handleSelectChat(activeCons[0]);
+          } else if (allowedCons.length > 0) {
+            handleSelectChat(allowedCons[0]);
           }
         }
       } catch (error) {
@@ -774,7 +774,12 @@ const Messages = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-0.5">
-                      <h3 className="text-sm font-bold text-slate-900 truncate">{isDoctor ? other?.name : `Dr. ${other?.name}`}</h3>
+                      <h3 className="text-sm font-bold text-slate-900 truncate flex items-center gap-1.5">
+                        <span className="truncate">{isDoctor ? other?.name : `Dr. ${other?.name}`}</span>
+                        {con.status === 'completed' && (
+                          <span className="shrink-0 text-[8px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider border border-slate-200/50">Ended</span>
+                        )}
+                      </h3>
                       <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
                         {con.lastMessageTime ? new Date(con.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                       </span>
@@ -828,13 +833,17 @@ const Messages = () => {
                     {isDoctor ? selectedChat.patient?.name : `Dr. ${selectedChat.doctor?.name}`}
                   </h2>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Active Session</span>
+                    <span className={`w-1.5 h-1.5 rounded-full ${selectedChat.status === 'completed' ? 'bg-slate-400' : 'bg-emerald-500 animate-pulse'}`}></span>
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${selectedChat.status === 'completed' ? 'text-slate-500' : 'text-emerald-600'}`}>
+                      {selectedChat.status === 'completed' 
+                        ? `Completed Session (${selectedChat.consultationStart ? new Date(selectedChat.consultationStart).toLocaleDateString() : 'N/A'} - ${selectedChat.consultationEnd ? new Date(selectedChat.consultationEnd).toLocaleDateString() : 'N/A'})` 
+                        : 'Active Session'}
+                    </span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {!calling && !callAccepted && !receivingCall && (
+                {selectedChat.status === 'active' && !calling && !callAccepted && !receivingCall && (
                   <div className="flex gap-2">
                     <button
                       className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all border border-blue-100"
@@ -944,30 +953,36 @@ const Messages = () => {
 
             {/* Chat Input */}
             <footer className="p-4 lg:p-6 bg-white border-t border-slate-100 flex-shrink-0">
-              <form onSubmit={handleSendMessage} className="flex items-center gap-4 bg-slate-50 rounded-2xl p-2 pr-3 border border-slate-100 focus-within:border-blue-500/50 transition-all">
-                <button type="button" className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                  </svg>
-                </button>
-                <input
-                  type="text"
-                  placeholder="Aa"
-                  className="flex-1 bg-transparent border-none outline-none text-sm py-2 font-medium"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                />
-                <button
-                  type="submit"
-                  disabled={!newMessage.trim()}
-                  className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${newMessage.trim() ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-                </button>
-              </form>
+              {selectedChat.status === 'active' ? (
+                <form onSubmit={handleSendMessage} className="flex items-center gap-4 bg-slate-50 rounded-2xl p-2 pr-3 border border-slate-100 focus-within:border-blue-500/50 transition-all">
+                  <button type="button" className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                  </button>
+                  <input
+                    type="text"
+                    placeholder="Aa"
+                    className="flex-1 bg-transparent border-none outline-none text-sm py-2 font-medium"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newMessage.trim()}
+                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${newMessage.trim() ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </button>
+                </form>
+              ) : (
+                <div className="text-center py-3 bg-slate-50 rounded-2xl border border-slate-100">
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">This consultation has ended. Read-only mode.</p>
+                </div>
+              )}
             </footer>
           </>
         ) : (
